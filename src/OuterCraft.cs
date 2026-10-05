@@ -187,6 +187,8 @@ namespace OuterCraft
 
         private void Update()
         {
+            // the font everywhere, the title screen's menu too
+            if (_ready) McFont.Update(_minecraftMode && _fontEnabled);
             if (!_ready || !_inSolarSystem) return;
             var controller = Locator.GetPlayerController();
             var cam = Locator.GetPlayerCamera();
@@ -195,7 +197,6 @@ namespace OuterCraft
             _sleep.Update(_minecraftMode);
             WarpCores.Enabled = _minecraftMode;
             _cores.Update(_minecraftMode);
-            McFont.Update(_minecraftMode && _fontEnabled);
             _music.Update(_minecraftMode, TimeLoop.IsTimeFlowing() && TimeLoop.GetSecondsRemaining() < 90f);
 
             var kb = Keyboard.current;
