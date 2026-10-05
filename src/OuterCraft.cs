@@ -317,6 +317,7 @@ namespace OuterCraft
 
         private int _lastStep;
         private float _lastHealth = -1f;
+        private float _lastHurtSound = -10f;
 
         /// Footsteps on Minecraft blocks (every 1/0.6 blocks walked, like Minecraft's nextStep) and the
         /// player's hurt sound whenever Outer Wilds takes health away.
@@ -350,8 +351,15 @@ namespace OuterCraft
             if (res != null)
             {
                 float h = res.GetHealthFraction();
-                if (_lastHealth >= 0f && h < _lastHealth - 0.001f && _minecraftMode && !PlayerState.IsDead())
+                // Minecraft's hurt invulnerability: after a hit, 10 ticks (0.5 s) before the next hurt
+                // sound, so standing in a campfire sounds like Minecraft's fire (a hit every half second)
+                // instead of a hurt sound every frame.
+                if (_lastHealth >= 0f && h < _lastHealth - 0.001f && _minecraftMode && !PlayerState.IsDead() &&
+                    Time.time - _lastHurtSound >= 0.5f)
+                {
                     McSounds.Hurt(body.GetPosition(), body.transform);
+                    _lastHurtSound = Time.time;
+                }
                 _lastHealth = h;
             }
         }
