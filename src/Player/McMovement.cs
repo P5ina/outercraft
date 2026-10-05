@@ -5,7 +5,7 @@ namespace OuterCraft.Player
 {
     /// Minecraft's movement on Outer Wilds' own character controller: we keep its spherical gravity,
     /// moving ground, collisions, jump and jetpack, and swap in Minecraft's speeds: walk 4.317 m/s,
-    /// sprint 5.612 (Ctrl or double-tap W), sneak 1.295 while Space is held for the charge jump.
+    /// sprint 5.612 (Ctrl or double-tap W). Holding Space crouches (Outer Wilds' charge jump): that's the sneak.
     public sealed class McMovement
     {
         public const float Walk = 4.317f, Sprint = 5.612f, Sneak = 1.295f;
@@ -47,7 +47,8 @@ namespace OuterCraft.Player
             if (!fwd || Sneaking) _sprintLatched = false;
             Sprinting = fwd && !Sneaking && (_sprintLatched || (kb != null && kb.leftCtrlKey.isPressed));
 
-            float speed = Sneaking ? Sneak : Sprinting ? Sprint : Walk;
+            // the crouch's slowdown is Outer Wilds' own: no Minecraft sneak speed on top of it
+            float speed = Sprinting ? Sprint : Walk;
             c._runSpeed = speed;
             c._walkSpeed = speed;
             c._strafeSpeed = speed;
