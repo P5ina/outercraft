@@ -66,8 +66,6 @@ namespace OuterCraft
             var harmony = new HarmonyLib.Harmony("P5INA.OuterCraft");
             harmony.Patch(HarmonyLib.AccessTools.Method(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode)),
                 prefix: new HarmonyLib.HarmonyMethod(typeof(OuterCraft), nameof(EquipToolPrefix)));
-            harmony.Patch(HarmonyLib.AccessTools.Method(typeof(OWInput), nameof(OWInput.GetAxisValue)),
-                postfix: new HarmonyLib.HarmonyMethod(typeof(OuterCraft), nameof(MoveAxisPostfix)));
             harmony.Patch(HarmonyLib.AccessTools.Method(typeof(WarpCoreItem), nameof(WarpCoreItem.GetDisplayName)),
                 postfix: new HarmonyLib.HarmonyMethod(typeof(WarpCores), nameof(WarpCores.DisplayNamePostfix)));
 
@@ -98,7 +96,6 @@ namespace OuterCraft
                 _runes.Forget();
                 _cores.Clear();
                 HandsBusy = false;
-                InvertMove = false;
                 _body.Clear();
                 _bodyState = 0;
                 _steve.Destroy();
@@ -236,7 +233,6 @@ namespace OuterCraft
             // F5: first person -> behind -> in front, like Minecraft
             if (kb != null && kb.f5Key.wasPressedThisFrame && active) _viewModel.Perspective = (_viewModel.Perspective + 1) % 3;
             bool third = hands && _viewModel.Perspective > 0;
-            InvertMove = third && _viewModel.Perspective == 2;
             _viewModel.Sneaking = false; // Outer Wilds lowers the camera itself while crouching
             _viewModel.Update(cam.mainCamera, _inv.CurrentItem, _inv.ChangedAt, hands);
             _steve.Update(third, _viewModel, _inv.CurrentItem, _movement.Sneaking, _elytra.Gliding, _inv.HasElytra);
@@ -289,14 +285,6 @@ namespace OuterCraft
         public static bool HandsBusy;
 
         private static bool EquipToolPrefix(ToolMode mode) => !(HandsBusy && mode == ToolMode.Probe);
-
-        /// Third person from the front: walking keys turned around, so W heads away from the camera.
-        public static bool InvertMove;
-
-        private static void MoveAxisPostfix(IInputCommands command, ref Vector2 __result)
-        {
-            if (InvertMove && command == InputLibrary.moveXZ) __result = -__result;
-        }
 
         private readonly DeathScreen _death = new DeathScreen();
         private readonly VillagerVoices _voices = new VillagerVoices();
