@@ -384,7 +384,7 @@ namespace OuterCraft
                 var res = Locator.GetPlayerBody()?.GetComponent<PlayerResources>();
                 float health = res != null ? res.GetHealthFraction() : 1f;
                 float oxygen = res != null ? res.GetOxygenFraction() : 1f;
-                _hud.Draw(_inv, health, oxygen, !_screen.IsOpen);
+                _hud.Draw(_inv, health, oxygen, !_screen.IsOpen && (_viewModel.Perspective == 0 || ToolOut())); // Gui.renderCrosshair: first person only
                 _screen.OnGUI(_inv);
                 if (_screen.IsOpen) { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; }
             }
