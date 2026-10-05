@@ -134,8 +134,8 @@ namespace OuterCraft.Player
             // along the look), so it faces where you fly
             if (gliding) head = new Part { XRot = -Mathf.PI / 4f };
             var torso = new Part();
-            var rArm = new Part { X = -5, Y = 2, XRot = Mathf.Cos(ls * 0.6662f + Pi) * 2f * la * 0.5f };
-            var lArm = new Part { X = 5, Y = 2, XRot = Mathf.Cos(ls * 0.6662f) * 2f * la * 0.5f };
+            var rArm = new Part { X = -5, Y = McAssets.SlimArms ? 2.5f : 2f, XRot = Mathf.Cos(ls * 0.6662f + Pi) * 2f * la * 0.5f };
+            var lArm = new Part { X = 5, Y = McAssets.SlimArms ? 2.5f : 2f, XRot = Mathf.Cos(ls * 0.6662f) * 2f * la * 0.5f };
             var rLeg = new Part { X = -1.9f, Y = 12, XRot = Mathf.Cos(ls * 0.6662f) * 1.4f * la };
             var lLeg = new Part { X = 1.9f, Y = 12, XRot = Mathf.Cos(ls * 0.6662f + Pi) * 1.4f * la };
 
@@ -179,11 +179,13 @@ namespace OuterCraft.Player
             Box(m, -4, 0, -2, 8, 12, 4, 16, 16, 0f, false, T, T, _skin);
             Box(m, -4, 0, -2, 8, 12, 4, 16, 32, 0.25f, false, T, T, _skin);       // jacket
             var ra = M(rArm);
-            Box(ra, -3, -2, -2, 4, 12, 4, 40, 16, 0f, false, T, T, _skin);
-            Box(ra, -3, -2, -2, 4, 12, 4, 40, 32, 0.25f, false, T, T, _skin);     // sleeve
+            // PlayerModel(slim): Alex-style arms are 3 pixels wide
+            float aw = McAssets.SlimArms ? 3f : 4f, rx = McAssets.SlimArms ? -2f : -3f;
+            Box(ra, rx, -2, -2, aw, 12, 4, 40, 16, 0f, false, T, T, _skin);
+            Box(ra, rx, -2, -2, aw, 12, 4, 40, 32, 0.25f, false, T, T, _skin);     // sleeve
             m = M(lArm);
-            Box(m, -1, -2, -2, 4, 12, 4, 32, 48, 0f, false, T, T, _skin);
-            Box(m, -1, -2, -2, 4, 12, 4, 48, 48, 0.25f, false, T, T, _skin);
+            Box(m, -1, -2, -2, aw, 12, 4, 32, 48, 0f, false, T, T, _skin);
+            Box(m, -1, -2, -2, aw, 12, 4, 48, 48, 0.25f, false, T, T, _skin);
             m = M(rLeg);
             Box(m, -2, 0, -2, 4, 12, 4, 0, 16, 0f, false, T, T, _skin);
             Box(m, -2, 0, -2, 4, 12, 4, 0, 32, 0.25f, false, T, T, _skin);        // pants

@@ -266,14 +266,17 @@ namespace OuterCraft.Player
             m = m * Mat.RotY(f * -135f);
             m = m * Mat.Translate(f * 5.6f, 0f, 0f);
             // PlayerModel.rightArm: pivot (-5, 2, 0), box (-3, -2, -2) size 4 x 12 x 4, skin uv (40, 16); 1/16 units
-            m = m * Mat.Translate(-5f / 16f, 2f / 16f, 0f);
-            Box(m, -3, -2, -2, 4, 12, 4, 40, 16, 64f, 64f, 1f / 16f);
+            // (slim skins: pivot (-5, 2.5, 0), box (-2, -2, -2) size 3 x 12 x 4)
+            bool slim = McAssets.SlimArms;
+            m = m * Mat.Translate(-5f / 16f, (slim ? 2.5f : 2f) / 16f, 0f);
+            Box(m, slim ? -2 : -3, -2, -2, slim ? 3 : 4, 12, 4, 40, 16, 64f, 64f, 1f / 16f);
+            Box(m, slim ? -2 : -3, -2, -2, slim ? 3 : 4, 12, 4, 40, 32, 64f, 64f, 1f / 16f, 0.25f);
         }
 
         /// A Minecraft ModelPart cube with its standard box UV unwrap.
-        private void Box(Mat m, float x0, float y0, float z0, float dx, float dy, float dz, float u, float v, float texW, float texH, float unit)
+        private void Box(Mat m, float x0, float y0, float z0, float dx, float dy, float dz, float u, float v, float texW, float texH, float unit, float inflate = 0f)
         {
-            McBox.Build(x0, y0, z0, dx, dy, dz, u, v, 0f, false, (p, t, n) =>
+            McBox.Build(x0, y0, z0, dx, dy, dz, u, v, inflate, false, (p, t, n) =>
             {
                 Vector3 P(Vector3 q) => m.MulPoint(q.x * unit, q.y * unit, q.z * unit);
                 Vector2 T(Vector2 q) => new Vector2(q.x / texW, 1f - q.y / texH);

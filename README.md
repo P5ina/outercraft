@@ -26,7 +26,7 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
   bobbing, first-person hand and held items, and footsteps on blocks.
 - **Elytra and firework rockets** with Minecraft's flight physics against each planet's pull.
 - **Nether portal**: an obsidian frame lit with flint and steel opens onto Dark Bramble.
-- **Steve** in third person (F5), with Minecraft's animations, held item and elytra.
+- **You** in third person (F5) with your own Minecraft skin (slim arms too), Minecraft's animations, held item and elytra.
 - **Hit Hearthians** like villagers. Everyone is back next loop.
 - **Minecraft deaths**: the red "You died!" screen over every Outer Wilds death, with its own death
   message (*Steve was blown up by the Sun*, *Steve was eaten by an Anglerfish*, *Steve fell out of
@@ -86,8 +86,8 @@ Shift and the rest of the jetpack controls are Outer Wilds' own.
 | gameMode | survival | `survival` or `creative` |
 | guiScale | 0 | Minecraft GUI scale, 0 = auto |
 | reach | 5 | Block reach in metres |
-| skin | steve | Default skin from the jar: steve, alex, kai, zuri, … |
-| playerName | Steve | Your name in death messages |
+| skin | auto | `auto`: your own skin, from the account signed in to the Minecraft launcher or Prism; a Minecraft username for theirs; a path to a .png; or a default skin from the jar (steve, alex, kai, …) |
+| playerName | Steve | Your name in death messages (with `skin: auto`, your account's name unless set) |
 | blockBrightness | 0.85 | Tone Minecraft's bright textures down to Outer Wilds' palette |
 | outerWildsShading | on | Draw blocks with Outer Wilds' own shader (off: OuterCraft's Minecraft shader) |
 | musicVolume | 0.3 | Volume of C418's music at the start of a loop (0 = off) |

@@ -15,7 +15,7 @@
     "reach": 5.0,
     "blockBrightness": 0.85,
     "outerWildsShading": true,
-    "skin": "steve",
+    "skin": "auto",
     "playerName": "Steve",
     "musicVolume": 0.3
   }

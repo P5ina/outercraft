@@ -22,7 +22,7 @@ namespace OuterCraft
 
         private bool _minecraftMode = true;
         private string _jarPath = "";
-        private string _skin = "steve";
+        private string _skin = "auto";
         private float _reach = 5f;
 
         private BlockWorld _world;
@@ -53,7 +53,7 @@ namespace OuterCraft
             ApplyConfig(ModHelper.Config);
             BlockMaterials.UseGameShader = ModHelper.Config.GetSettingsValue<bool>("outerWildsShading");
             BlockMaterials.Load(ModHelper.Manifest.ModFolderPath);
-            _ready = McAssets.Load(_jarPath, _skin);
+            _ready = McAssets.Load(_jarPath, McSkin.IsDefault(_skin) && !string.IsNullOrWhiteSpace(_skin) ? _skin.Trim().ToLowerInvariant() : "steve");
             if (!_ready)
             {
                 ModHelper.Console.WriteLine("OuterCraft: Minecraft jar not found. Set 'minecraftJar' in the mod settings to your minecraft client .jar.", MessageType.Error);
@@ -62,6 +62,7 @@ namespace OuterCraft
             }
 
             StartCoroutine(McSounds.Load(McAssets.Source));
+            StartCoroutine(SkinThenName());
             var harmony = new HarmonyLib.Harmony("P5INA.OuterCraft");
             harmony.Patch(HarmonyLib.AccessTools.Method(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode)),
                 prefix: new HarmonyLib.HarmonyMethod(typeof(OuterCraft), nameof(EquipToolPrefix)));
@@ -136,6 +137,14 @@ namespace OuterCraft
             ModHelper.Console.WriteLine("OuterCraft ready. G toggles Minecraft mode.", MessageType.Success);
         }
 
+        /// The player's own skin (from their launcher account), and their name in death messages
+        /// unless one is set.
+        private System.Collections.IEnumerator SkinThenName()
+        {
+            yield return McSkin.Load(_skin, ModHelper.Manifest.ModFolderPath);
+            if (McSkin.AccountName != null && _death.PlayerName == "Steve") _death.PlayerName = McSkin.AccountName;
+        }
+
         public override void Configure(IModConfig config) => ApplyConfig(config);
 
         private void ApplyConfig(IModConfig config)
@@ -146,7 +155,7 @@ namespace OuterCraft
             _creative = (config.GetSettingsValue<string>("gameMode") ?? "survival").ToLowerInvariant().StartsWith("c");
             _inv.Creative = _creative;
             _reach = config.GetSettingsValue<float>("reach");
-            _skin = config.GetSettingsValue<string>("skin") ?? "steve";
+            _skin = config.GetSettingsValue<string>("skin") ?? "auto";
             _music.Volume = Mathf.Clamp01(config.GetSettingsValue<float>("musicVolume"));
             var name = config.GetSettingsValue<string>("playerName");
             _death.PlayerName = string.IsNullOrWhiteSpace(name) ? "Steve" : name.Trim();

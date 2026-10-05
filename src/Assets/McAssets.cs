@@ -20,6 +20,7 @@ namespace OuterCraft.Assets
         public static readonly int[] GlyphWidth = new int[256];
         public static Texture2D Sga;
         public static Texture2D EndCrystal;
+        public static bool SlimArms;
         public static readonly int[] SgaWidth = new int[256];
         public static bool SkinSlim;
         public static readonly Dictionary<string, Texture2D> Gui = new Dictionary<string, Texture2D>();
