@@ -51,6 +51,12 @@ namespace OuterCraft.Assets
             ["lantern.break"] = Range("block/lantern/break", 6), ["lantern.place"] = Range("block/lantern/place", 6),
         };
 
+        // Minecraft, Clark, Sweden, Subwoofer Lullaby, Living Mice, Haggstrom, Danny, Key, Oxygène,
+        // Dry Hands, Wet Hands, Mice on Venus
+        private static readonly string[] C418 =
+            { "calm1", "calm2", "calm3", "hal1", "hal2", "hal3", "hal4", "nuance1", "nuance2", "piano1", "piano2", "piano3" };
+        public static readonly List<string> MusicFiles = new List<string>();
+
         private static string[] Range(string stem, int n) => Enumerable.Range(1, n).Select(i => stem + i).ToArray();
 
         // ---------------------------------------------------------------- loading
@@ -79,6 +85,16 @@ namespace OuterCraft.Assets
                 if (hash == null) continue;
                 var path = Path.Combine(assets, "objects", hash.Substring(0, 2), hash);
                 if (File.Exists(path)) Files[name] = path;
+            }
+
+            // C418's game music: only located here, streamed in when a loop starts (see McMusic)
+            MusicFiles.Clear();
+            foreach (var t in C418)
+            {
+                var hash = (string)objects[$"minecraft/sounds/music/game/{t}.ogg"]?["hash"];
+                if (hash == null) continue;
+                var path = Path.Combine(assets, "objects", hash.Substring(0, 2), hash);
+                if (File.Exists(path)) MusicFiles.Add(path);
             }
 
             foreach (var kv in Files)

@@ -295,6 +295,12 @@ namespace OuterCraft.Player
                 var other = pb.Grid.Step(cell, def.Prop(state, "half") == "upper" ? Dir.Down : Dir.Up);
                 if (pb.Def(other) == def) pb.Set(other, 0); // no drop from the other half: one door
             }
+            // and the other half of a bed (it drops once, from whichever half was broken)
+            if (def.Place == PlaceKind.Bed && Dirs.TryParse(def.Prop(state, "facing"), out var bf))
+            {
+                var other = pb.Grid.Step(cell, def.Prop(state, "part") == "head" ? Dirs.Opposite(bf) : bf);
+                if (pb.Def(other) == def) pb.Set(other, 0);
+            }
 
             pb.Set(cell, 0);
             NetherPortal.Instance?.OnRemoved(pb, cell);
@@ -339,6 +345,9 @@ namespace OuterCraft.Player
 
         // ---------------------------------------------------------------- use / place
 
+        /// Right click on a bed: lie down in it.
+        public System.Action<PlanetBlocks, Cell> UseBed;
+
         private bool Use(Inventory inv)
         {
             var kb = Keyboard.current;
@@ -352,6 +361,11 @@ namespace OuterCraft.Player
                 if (def != null && def.Place == PlaceKind.Door)
                 {
                     ToggleDoor(h.Pb, h.Cell);
+                    return true;
+                }
+                if (def != null && def.Place == PlaceKind.Bed && UseBed != null)
+                {
+                    UseBed(h.Pb, h.Cell);
                     return true;
                 }
                 if (def != null && def.Key == "crafting_table")
@@ -550,6 +564,20 @@ namespace OuterCraft.Player
                 case PlaceKind.Plant:
                     if (face != Dir.Up) return false;
                     break;
+                case PlaceKind.Bed:
+                {
+                    // BedBlock: the foot where you click, the head one block on, the way you look
+                    if (face != Dir.Up) return false;
+                    var headCell = pb.Grid.Step(cell, look);
+                    var ex = pb.Def(headCell);
+                    if (ex != null && !(ex.Place == PlaceKind.Plant && ex.Key != "oak_sapling")) return false;
+                    int foot = block.Find(("facing", Name(look)), ("part", "foot"));
+                    int head = block.Find(("facing", Name(look)), ("part", "head"));
+                    if (foot < 0 || head < 0) return false;
+                    if (!Commit(inv, pb, cell, block, foot)) return false;
+                    pb.Set(headCell, block.Id, head);
+                    return true;
+                }
                 case PlaceKind.Door:
                 {
                     var above = pb.Grid.Step(cell, Dir.Up);

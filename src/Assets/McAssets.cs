@@ -18,6 +18,8 @@ namespace OuterCraft.Assets
         public static Texture2D Wings;
         public static Texture2D Font;
         public static readonly int[] GlyphWidth = new int[256];
+        public static Texture2D Sga;
+        public static readonly int[] SgaWidth = new int[256];
         public static bool SkinSlim;
         public static readonly Dictionary<string, Texture2D> Gui = new Dictionary<string, Texture2D>();
 
@@ -94,6 +96,13 @@ namespace OuterCraft.Assets
                     Font = font.ToTexture();
                     MeasureGlyphs(font);
                 }
+                // the enchanting table's Standard Galactic Alphabet (font "minecraft:alt")
+                var sga = jar.LoadImage("assets/minecraft/textures/font/ascii_sga.png", false);
+                if (sga != null)
+                {
+                    Sga = sga.ToTexture();
+                    MeasureGlyphs(sga, SgaWidth);
+                }
             }
             Loaded = Atlas != null;
             OuterCraft.Log($"Minecraft textures loaded from {Source} ({Blocks.All.Count} blocks)");
@@ -127,7 +136,9 @@ namespace OuterCraft.Assets
         };
 
         /// Minecraft's ascii.png: 16x16 glyphs; a glyph is as wide as its rightmost lit column (+1).
-        private static void MeasureGlyphs(Image font)
+        private static void MeasureGlyphs(Image font) => MeasureGlyphs(font, GlyphWidth);
+
+        private static void MeasureGlyphs(Image font, int[] widths)
         {
             int cell = font.W / 16;
             for (int ch = 0; ch < 256; ch++)
@@ -137,7 +148,7 @@ namespace OuterCraft.Assets
                 for (int x = cell - 1; x >= 0 && right < 0; x--)
                     for (int y = 0; y < cell; y++)
                         if (font[gx + x, gy + y].a > 0) { right = x; break; }
-                GlyphWidth[ch] = ch == 32 ? cell / 2 : right + 2;
+                widths[ch] = ch == 32 ? cell / 2 : right + 2;
             }
         }
 
@@ -250,6 +261,7 @@ namespace OuterCraft.Assets
 
         private static readonly Dictionary<BlockDef, StateSpec> _specs = new Dictionary<BlockDef, StateSpec>();
         private static readonly Dictionary<ItemDef, McModels.Model> _itemModels = new Dictionary<ItemDef, McModels.Model>();
+        private static readonly Dictionary<ItemDef, List<(McModels.Model m, Vector3 off)>> _itemComposites = new Dictionary<ItemDef, List<(McModels.Model m, Vector3 off)>>();
 
         private static (McModels.Model, int, int) Apply(McModels models, JToken t)
         {
@@ -300,6 +312,23 @@ namespace OuterCraft.Assets
                 string name = null;
                 var ij = models.Json($"assets/minecraft/items/{item.Key}.json");
                 if (ij?["model"] is JObject im && (string)im["type"] == "minecraft:model") name = (string)im["model"];
+                // composite item models (beds since 26.1: head + foot one block apart)
+                if (ij?["model"] is JObject cm && (string)cm["type"] == "minecraft:composite" && cm["models"] is JArray subs)
+                {
+                    var list = new List<(McModels.Model m, Vector3 off)>();
+                    foreach (var sub in subs.OfType<JObject>())
+                    {
+                        if ((string)sub["type"] != "minecraft:model") continue;
+                        var sm = models.Load((string)sub["model"]);
+                        if (sm == null || sm.Elements == null) continue;
+                        var off = Vector3.zero;
+                        if (sub["transformation"]?["translation"] is JArray tr && tr.Count == 3)
+                            off = new Vector3((float)tr[0], (float)tr[1], (float)tr[2]);
+                        list.Add((sm, off));
+                        foreach (var t in models.TexturesOf(sm)) tex.Add(t);
+                    }
+                    if (list.Count > 0) { _itemComposites[item] = list; continue; }
+                }
                 var m = models.Load(name ?? "item/" + item.Key);
                 if (m == null || (!m.Generated && m.Elements == null)) continue;
                 _itemModels[item] = m;
@@ -357,6 +386,7 @@ namespace OuterCraft.Assets
                     case PlaceKind.Lantern: def = b.Find(("hanging", "false")); break;
                     case PlaceKind.FacingAway: def = b.Find(("facing", "north"), ("lit", "false")); if (def < 0) def = b.Find(("facing", "north")); break;
                     case PlaceKind.WallAttached: def = b.Find(("facing", "north")); break;
+                    case PlaceKind.Bed: def = b.Find(("facing", "north"), ("part", "foot")); break;
                 }
                 if (def >= 0) b.DefaultState = def;
                 // particles: the model's "particle" texture
@@ -374,6 +404,25 @@ namespace OuterCraft.Assets
                 {
                     item.Model = McModels.Cube(b, blockDisplay);
                     item.Icon = _cubeIcons.TryGetValue(b, out var ic) ? ic : null;
+                    continue;
+                }
+                if (_itemComposites.TryGetValue(item, out var comp))
+                {
+                    var cmod = new BakedModel { Display = comp[0].m.Display };
+                    foreach (var (sm, off) in comp)
+                    {
+                        var part = models.Bake(sm);
+                        foreach (var q0 in part.Quads)
+                        {
+                            var q = q0;
+                            q.P0 += off; q.P1 += off; q.P2 += off; q.P3 += off;
+                            q.Cull = -1;
+                            cmod.Quads.Add(q);
+                        }
+                        foreach (var bx in part.Boxes) cmod.Boxes.Add(new Bounds(bx.center + off, bx.size));
+                    }
+                    item.Model = cmod;
+                    item.Icon = IconRaster.Render(cmod, cmod.Get("gui"), _atlasImg, item.TintColor).ToTexture();
                     continue;
                 }
                 if (!_itemModels.TryGetValue(item, out var m)) { Items.Remove(item); continue; }

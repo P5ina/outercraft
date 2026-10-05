@@ -34,6 +34,11 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
 - **Advancements** for Outer Wilds milestones: *We Need to Go Deeper* (Dark Bramble), *Hot Tourist
   Destinations* (the Sun), *Sky's the Limit*, *Fishy Business*, *The End?* and more.
 - **Hearthians talk like villagers**: a "hmm" on every page of dialogue.
+- **Nomai in the Standard Galactic Alphabet**: the translator shows untranslated words in the
+  enchanting table's runes (the real words, letter for letter) and decodes them one by one.
+- **Beds**: lie down and time runs fast like at a campfire, under Minecraft's sleep darkness.
+  *You may not rest now; the Sun is exploding.* (Bed models need Minecraft 26.1 or newer.)
+- **C418's music** at the start of every loop, quietly over the Hearthian system's own sounds.
 - **Builds reset with the loop**, like everything else in the Hearthian system.
 
 ## Requirements
@@ -67,6 +72,7 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
 | Shift | Sneak |
 | F5 | First person → behind → front |
 | [ ] | Creative: cycle every item in the held slot |
+| Shift / Space | Leave a bed |
 
 In the suit, a tap of Space is Minecraft's jump; hold it in the air for the jetpack.
 
@@ -83,6 +89,7 @@ In the suit, a tap of Space is Minecraft's jump; hold it in the air for the jetp
 | playerName | Steve | Your name in death messages |
 | blockBrightness | 0.85 | Tone Minecraft's bright textures down to Outer Wilds' palette |
 | outerWildsShading | on | Draw blocks with Outer Wilds' own shader (off: OuterCraft's Minecraft shader) |
+| musicVolume | 0.3 | Volume of C418's music at the start of a loop (0 = off) |
 
 ## Building
 

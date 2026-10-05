@@ -39,6 +39,9 @@ namespace OuterCraft
         private readonly BlockInteraction _interaction = new BlockInteraction();
         private readonly ViewModel _viewModel = new ViewModel();
         private readonly McHud _hud = new McHud();
+        private readonly Sleep _sleep = new Sleep();
+        private readonly NomaiRunes _runes = new NomaiRunes();
+        private readonly McMusic _music = new McMusic();
         private bool _inSolarSystem;
         private bool _ready;
 
@@ -76,6 +79,8 @@ namespace OuterCraft
             _inv.ResetToKit();
             _interaction.Swung = _viewModel.Swing;
             _interaction.OpenCrafting = () => OpenScreen(InventoryScreen.Kind.Crafting);
+            _interaction.UseBed = (pb, cell) => _sleep.TryStart(pb, cell);
+            _viewModel.ViewOverride = _sleep.View;
             _screen.Throw = stack =>
             {
                 var cam = Locator.GetPlayerCamera();
@@ -85,6 +90,8 @@ namespace OuterCraft
             LoadManager.OnStartSceneLoad += (from, to) =>
             {
                 _inSolarSystem = false;
+                _sleep.Forget();
+                _runes.Forget();
                 HandsBusy = false;
                 InvertMove = false;
                 _body.Clear();
@@ -112,6 +119,7 @@ namespace OuterCraft
                     _inv.ResetToKit(); // a new loop: the kit again, nothing carried over
                     _death.OnNewLoop();
                     _voices.Hook();
+                    _music.OnNewLoop();
                     if (_loops > 0)
                     {
                         if (DeathScreen.LastDeath == DeathType.Digestion) Advancements.Grant("fishy");
@@ -135,6 +143,7 @@ namespace OuterCraft
             _inv.Creative = _creative;
             _reach = config.GetSettingsValue<float>("reach");
             _skin = config.GetSettingsValue<string>("skin") ?? "steve";
+            _music.Volume = Mathf.Clamp01(config.GetSettingsValue<float>("musicVolume"));
             var name = config.GetSettingsValue<string>("playerName");
             _death.PlayerName = string.IsNullOrWhiteSpace(name) ? "Steve" : name.Trim();
             _interaction.Reach = _reach > 0 ? _reach : 5f;
@@ -167,6 +176,9 @@ namespace OuterCraft
             var controller = Locator.GetPlayerController();
             var cam = Locator.GetPlayerCamera();
             if (controller == null || cam == null) return;
+
+            _sleep.Update(_minecraftMode);
+            _music.Update(_minecraftMode, TimeLoop.IsTimeFlowing() && TimeLoop.GetSecondsRemaining() < 90f);
 
             var kb = Keyboard.current;
             if (kb != null && OWInput.IsInputMode(InputMode.Character) && kb.gKey.wasPressedThisFrame)
@@ -214,7 +226,7 @@ namespace OuterCraft
             _viewModel.Update(cam.mainCamera, _inv.CurrentItem, _inv.ChangedAt, hands);
             _steve.Update(third, _viewModel, _inv.CurrentItem, _movement.Sneaking, _elytra.Gliding, _inv.HasElytra);
             Sounds(controller, active);
-            HideOwnBody(third ? 2 : hands ? 1 : 0);
+            HideOwnBody(third || _sleep.Asleep ? 2 : hands ? 1 : 0);
             _portal.Update(_inv.Creative);
             _voices.Enabled = _minecraftMode;
             Milestones(active);
@@ -286,6 +298,12 @@ namespace OuterCraft
             var sun = Locator.GetAstroObject(AstroObject.Name.Sun);
             var body = Locator.GetPlayerBody();
             if (sun != null && body != null && (sun.transform.position - body.GetPosition()).magnitude < 4500f) Advancements.Grant("hot_tourist");
+        }
+
+        private void LateUpdate()
+        {
+            if (!_ready || !_inSolarSystem) return;
+            _runes.LateUpdate(_minecraftMode);
         }
 
         private void FixedUpdate()
@@ -377,6 +395,7 @@ namespace OuterCraft
                     "OuterCraft: Minecraft Java Edition not found.\nInstall Minecraft 1.21.4 or newer and launch it once, or set 'Minecraft jar' in the mod's settings.", _warnStyle);
             }
             if (_ready && _inSolarSystem) _portal.DrawOverlay();
+            if (_ready && _inSolarSystem && _minecraftMode) _sleep.Draw();
             if (_ready && _inSolarSystem && _minecraftMode) _death.Draw();
             if (_ready && _inSolarSystem) Advancements.Draw(_minecraftMode && !PlayerState.IsDead());
             if (_ready && _inSolarSystem && _minecraftMode && (OnFoot() || _screen.IsOpen))

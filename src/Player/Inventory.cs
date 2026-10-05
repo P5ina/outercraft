@@ -228,7 +228,7 @@ namespace OuterCraft.Player
             Chest = ely != null ? new ItemStack(ely, 1) : null;
             string[] rest =
             {
-                "diamond_sword", "diamond_shovel",
+                "diamond_sword", "diamond_shovel", "red_bed",
                 "stone_bricks", "bricks", "oak_stairs", "oak_slab", "cobblestone_stairs", "stone_brick_slab", "oak_door", "ladder",
                 "lantern", "oak_fence", "glass_pane", "dirt", "grass_block", "stone", "glowstone", "furnace", "poppy", "dandelion",
                 "obsidian", "flint_and_steel", "sand", "coal", "iron_ingot",

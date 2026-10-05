@@ -69,6 +69,27 @@ namespace OuterCraft.UI
                 string name = held.Name;
                 Text(name, (w - TextWidth(name)) / 2f, h - (inv.Creative ? 37f : 59f), new Color(1, 1, 1, alpha));
             }
+            DrawOverlay(w, h);
+        }
+
+        // ---------------------------------------------------------------- the action bar message
+
+        private static string _overlay;
+        private static float _overlayAt = -10f;
+
+        /// Gui.setOverlayMessage: a line above the hotbar for 3 seconds (the last second fading).
+        public static void Overlay(string text)
+        {
+            _overlay = text;
+            _overlayAt = Time.unscaledTime;
+        }
+
+        private static void DrawOverlay(float w, float h)
+        {
+            float t = Time.unscaledTime - _overlayAt;
+            if (_overlay == null || t > 3f) return;
+            float alpha = Mathf.Clamp01((3f - t) / 1f);
+            Text(_overlay, (w - TextWidth(_overlay)) / 2f, h - 68f, new Color(1, 1, 1, alpha));
         }
     }
 }

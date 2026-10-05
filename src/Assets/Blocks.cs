@@ -9,7 +9,7 @@ namespace OuterCraft.Assets
     public enum ToolType { None, Pickaxe, Axe, Shovel, Hoe, Sword }
 
     /// How a block picks its state when placed.
-    public enum PlaceKind { Simple, Torch, Lantern, Stairs, Slab, Door, WallAttached, FacingAway, Plant }
+    public enum PlaceKind { Simple, Torch, Lantern, Stairs, Slab, Door, WallAttached, FacingAway, Plant, Bed }
 
     /// A Minecraft block. Full cubes use the fast cube mesher (with Minecraft AO); everything else
     /// ("model" blocks) is baked from the jar's blockstate + JSON models.
@@ -226,6 +226,8 @@ namespace OuterCraft.Assets
             Model("red_mushroom", PlaceKind.Plant, collide: false).Mine(0f, ToolType.None);
             Model("nether_portal", PlaceKind.Simple, collide: false, light: 11, item: "").Mine(0f, ToolType.None, drop: "");
             Model("brown_mushroom", PlaceKind.Plant, collide: false, light: 1).Mine(0f, ToolType.None);
+            // ---- 1.2: a bed to sleep through the loop (JSON bed models since Minecraft 26.1)
+            Model("red_bed", PlaceKind.Bed).Mine(0.2f, ToolType.None);
         }
 
         private static BlockDef Add(string key, string all = null, string top = null, string bottom = null, string side = null,

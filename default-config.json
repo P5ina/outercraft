@@ -16,6 +16,7 @@
     "blockBrightness": 0.85,
     "outerWildsShading": true,
     "skin": "steve",
-    "playerName": "Steve"
+    "playerName": "Steve",
+    "musicVolume": 0.3
   }
 }

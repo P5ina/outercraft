@@ -53,7 +53,7 @@ namespace OuterCraft.Assets
         {
             if (All.Count > 0) return;
             foreach (var b in Blocks.All)
-                if (b.ItemKey == null) Register(new ItemDef { Key = b.Key, Block = b });
+                if (b.ItemKey == null) Register(new ItemDef { Key = b.Key, Block = b, MaxStack = b.Place == PlaceKind.Bed ? 1 : 64 });
             foreach (var k in Plain) Register(new ItemDef { Key = k, MaxStack = k == "snowball" ? 16 : k == "flint_and_steel" || k == "elytra" ? 1 : 64 });
             foreach (var (mat, tier, speed) in Materials)
             {

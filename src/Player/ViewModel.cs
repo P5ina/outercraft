@@ -46,6 +46,7 @@ namespace OuterCraft.Player
 
         /// 0: first person, 1: third person from behind, 2: from the front (F5).
         public int Perspective;
+        public System.Func<Matrix4x4?> ViewOverride;
         public bool Sneaking;
         private const float SneakDrop = 1.62f - 1.27f; // Minecraft's standing and crouching eye heights
         private float _sneakOffset;
@@ -179,6 +180,18 @@ namespace OuterCraft.Player
 
         private void OnPreCull(Camera cam)
         {
+            if (cam == _main && !_bobApplied && ViewOverride != null)
+            {
+                // lying in a bed: the eyes are where the bed puts them (view matrix only)
+                var pose = ViewOverride();
+                if (pose.HasValue)
+                {
+                    cam.worldToCameraMatrix = Matrix4x4.Scale(new Vector3(1, 1, -1)) * pose.Value.inverse;
+                    _viewMatrixSet = true;
+                    _bobApplied = true;
+                    return;
+                }
+            }
             if (cam != _main || _bobApplied || !(_bobEnabledThisFrame || _thirdThisFrame || _sneakOffset > 0.001f)) return;
             var t = cam.transform;
             _savedPos = t.localPosition;
@@ -207,6 +220,8 @@ namespace OuterCraft.Player
             // same B from the view matrix.
             var local = Matrix4x4.TRS(_savedPos + shift, _savedRot, Vector3.one);
             if (_bobEnabledThisFrame) local *= BobView(Mat.Identity).ToUnity().inverse;
+            // the hand rides down with the eyes when sneaking (it's in camera space, the eyes moved)
+            if (_root != null) _root.localPosition = Quaternion.Inverse(_savedRot) * shift;
             var world = t.parent != null ? t.parent.localToWorldMatrix * local : local;
             cam.worldToCameraMatrix = Matrix4x4.Scale(new Vector3(1, 1, -1)) * world.inverse;
             _viewMatrixSet = true;
@@ -216,7 +231,12 @@ namespace OuterCraft.Player
         private void OnPostRender(Camera cam)
         {
             if (cam != _main || !_bobApplied) return;
-            if (_viewMatrixSet) { cam.ResetWorldToCameraMatrix(); _viewMatrixSet = false; }
+            if (_viewMatrixSet)
+            {
+                cam.ResetWorldToCameraMatrix();
+                _viewMatrixSet = false;
+                if (_root != null) _root.localPosition = Vector3.zero;
+            }
             else
             {
                 cam.transform.localPosition = _savedPos;
