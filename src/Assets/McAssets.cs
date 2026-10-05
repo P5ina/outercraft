@@ -21,6 +21,7 @@ namespace OuterCraft.Assets
         public static Texture2D Sga;
         public static Texture2D EndCrystal;
         public static bool SlimArms;
+        public static Texture2D SpyglassScope;
         public static readonly int[] SgaWidth = new int[256];
         public static bool SkinSlim;
         public static readonly Dictionary<string, Texture2D> Gui = new Dictionary<string, Texture2D>();
@@ -92,6 +93,7 @@ namespace OuterCraft.Assets
                 Skin = skin?.ToTexture();
                 Wings = (jar.LoadImage("assets/minecraft/textures/entity/equipment/wings/elytra.png", false)
                          ?? jar.LoadImage("assets/minecraft/textures/entity/elytra.png", false))?.ToTexture();   // before 1.21.2
+                SpyglassScope = jar.LoadImage("assets/minecraft/textures/misc/spyglass_scope.png", false)?.ToTexture(FilterMode.Bilinear);
                 EndCrystal = jar.LoadImage("assets/minecraft/textures/entity/end_crystal/end_crystal.png", false)?.ToTexture();
                 var font = jar.LoadImage("assets/minecraft/textures/font/ascii.png", false);
                 if (font != null)

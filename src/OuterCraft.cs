@@ -43,6 +43,7 @@ namespace OuterCraft
         private readonly NomaiRunes _runes = new NomaiRunes();
         private readonly McMusic _music = new McMusic();
         private readonly WarpCores _cores = new WarpCores();
+        private readonly Spyglass _spyglass = new Spyglass();
         private bool _inSolarSystem;
         private bool _ready;
 
@@ -95,6 +96,7 @@ namespace OuterCraft
                 _sleep.Forget();
                 _runes.Forget();
                 _cores.Clear();
+                _spyglass.Clear();
                 HandsBusy = false;
                 _body.Clear();
                 _bodyState = 0;
@@ -232,12 +234,17 @@ namespace OuterCraft
             _interaction.Update(cam.mainCamera, _inv, input);
             // F5: first person -> behind -> in front, like Minecraft
             if (kb != null && kb.f5Key.wasPressedThisFrame && active) _viewModel.Perspective = (_viewModel.Perspective + 1) % 3;
-            bool third = hands && _viewModel.Perspective > 0;
+            // the signalscope is Minecraft's spyglass: held in the Minecraft hand, put away when zoomed
+            _spyglass.Update(_minecraftMode);
+            bool scopeOut = active && _spyglass.Out;
+            var shown = scopeOut ? _spyglass.Item : _inv.CurrentItem;
+            bool showHand = hands || (scopeOut && !_spyglass.Zoomed);
+            bool third = (hands || scopeOut) && _viewModel.Perspective > 0;
             _viewModel.Sneaking = false; // Outer Wilds lowers the camera itself while crouching
-            _viewModel.Update(cam.mainCamera, _inv.CurrentItem, _inv.ChangedAt, hands);
-            _steve.Update(third, _viewModel, _inv.CurrentItem, _movement.Sneaking, _elytra.Gliding, _inv.HasElytra);
+            _viewModel.Update(cam.mainCamera, shown, scopeOut ? _spyglass.OutAt : _inv.ChangedAt, showHand);
+            _steve.Update(third, _viewModel, shown, _movement.Sneaking, _elytra.Gliding, _inv.HasElytra);
             Sounds(controller, active);
-            HideOwnBody(third || _sleep.Asleep ? 2 : hands ? 1 : 0);
+            HideOwnBody(third || _sleep.Asleep ? 2 : hands || scopeOut ? 1 : 0);
             _portal.Update(_inv.Creative);
             _voices.Enabled = _minecraftMode;
             Milestones(active);
@@ -400,6 +407,7 @@ namespace OuterCraft
             if (_ready && _inSolarSystem && _minecraftMode) _sleep.Draw();
             if (_ready && _inSolarSystem && _minecraftMode) _death.Draw();
             if (_ready && _inSolarSystem) Advancements.Draw(_minecraftMode && !PlayerState.IsDead());
+            if (_ready && _inSolarSystem && _minecraftMode) _spyglass.DrawScope();
             if (_ready && _inSolarSystem && _minecraftMode && (OnFoot() || _screen.IsOpen))
             {
                 var res = Locator.GetPlayerBody()?.GetComponent<PlayerResources>();
