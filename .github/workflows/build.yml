@@ -33,9 +33,19 @@ jobs:
           name: P5INA.OuterCraft
           path: P5INA.OuterCraft.zip
 
+      # A release for every new version in manifest.json pushed to main (the tag is created here).
+      - name: Version
+        id: version
+        run: |
+          v=$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")
+          echo "tag=v$v" >> $GITHUB_OUTPUT
+          if git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null; then echo "exists=true" >> $GITHUB_OUTPUT; else echo "exists=false" >> $GITHUB_OUTPUT; fi
+
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || (github.ref == 'refs/heads/main' && steps.version.outputs.exists == 'false'))
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.version.outputs.tag }}
+          name: OuterCraft ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.version.outputs.tag }}
           files: P5INA.OuterCraft.zip
           generate_release_notes: true

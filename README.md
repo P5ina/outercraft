@@ -86,7 +86,7 @@ dotnet build OuterCraft.csproj -c Release
 Builds straight into the Mod Manager's mod folder on Windows (override with `-p:OutputPath=...`).
 Game and OWML assemblies come from the `OuterWildsGameLibs` and `OWML` NuGet packages.
 `bundle/outercraft.shaders` is a prebuilt Unity 2019.4 asset bundle of the shaders in `UnityShaders/`.
-Pushing a `v*` tag builds the release zip in GitHub Actions.
+Every push to `main` with a new `version` in `manifest.json` builds the zip and publishes a release (GitHub Actions).
 
 ## Legal
 
