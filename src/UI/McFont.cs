@@ -303,8 +303,14 @@ namespace OuterCraft.UI
                 bold[i] = bolds > 0;
             }
 
-            // words: runs of drawn characters on one line, laid out in Minecraft's advances and
-            // fitted to the span the game's own font gave them
+            // whole lines in Minecraft's own proportions, aligned like the game's text, squeezed
+            // only when they'd run wider than the game's line (translator text decodes word by
+            // word, so it keeps to the words' own places)
+            if (runes == null)
+            {
+                LayLines(vh, str, chars, lines, hidden, col, bold, p, upp);
+                return;
+            }
             int line = 0;
             int a = 0;
             while (a < n)
@@ -340,6 +346,50 @@ namespace OuterCraft.UI
                     x += g.Advance * p * k;
                 }
                 a = b + 1;
+            }
+        }
+
+        private void LayLines(VertexHelper vh, string str, IList<UICharInfo> chars, IList<UILineInfo> lines,
+            bool[] hidden, Color[] col, bool[] bold, float p, float upp)
+        {
+            int n = str.Length;
+            var align = _text.alignment;
+            bool center = align == TextAnchor.UpperCenter || align == TextAnchor.MiddleCenter || align == TextAnchor.LowerCenter;
+            bool right = align == TextAnchor.UpperRight || align == TextAnchor.MiddleRight || align == TextAnchor.LowerRight;
+            for (int l = 0; l < lines.Count; l++)
+            {
+                int start = lines[l].startCharIdx, end = l + 1 < lines.Count ? lines[l + 1].startCharIdx : n;
+                end = Mathf.Min(end, n);
+                int first = -1, last = -1;
+                for (int i = start; i < end; i++)
+                    if (!hidden[i] && !char.IsWhiteSpace(str[i])) { if (first < 0) first = i; last = i; }
+                if (first < 0) continue;
+                float x0 = chars[first].cursorPos.x * upp, x1 = (chars[last].cursorPos.x + chars[last].charWidth) * upp;
+                float natural = 0f;
+                for (int i = first; i <= last; i++)
+                {
+                    if (hidden[i]) continue;
+                    if (McFont.TryGlyph(str[i], out var g)) natural += g.Advance * p;
+                }
+                natural = Mathf.Max(p, natural - p);
+                float span = Mathf.Max(p, x1 - x0);
+                float k = natural > span * 1.08f ? span * 1.08f / natural : 1f;
+                float w = natural * k;
+                float x = center ? (x0 + x1) / 2f - w / 2f : right ? x1 - w : x0;
+                var li = lines[l];
+                float baseline = (li.topY - li.height * 0.78f) * upp;
+                for (int i = first; i <= last; i++)
+                {
+                    if (hidden[i] || !McFont.TryGlyph(str[i], out var g)) continue;
+                    float gw = g.Width * p * k;
+                    if (gw > 0f && !char.IsWhiteSpace(str[i]))
+                    {
+                        float top = baseline + g.Top * p, bottom = baseline + (g.Top - g.Height) * p;
+                        Quad(vh, x, bottom, x + gw, top, g.Uv, col[i]);
+                        if (bold[i]) Quad(vh, x + p * k, bottom, x + gw + p * k, top, g.Uv, col[i]);
+                    }
+                    x += g.Advance * p * k;
+                }
             }
         }
 
