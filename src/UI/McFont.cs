@@ -185,7 +185,7 @@ namespace OuterCraft.UI
 
         private static readonly Dictionary<Text, Saved> Swapped = new Dictionary<Text, Saved>();
         private static float _next;
-        private static bool _on;
+        private static bool _on, _reported;
 
         public static void Update(bool enabled)
         {
@@ -199,8 +199,10 @@ namespace OuterCraft.UI
             _on = true;
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + 1f;
+            int found = 0, swapped = 0, noSpacing = 0;
             foreach (var t in Resources.FindObjectsOfTypeAll<Text>())
             {
+                if (t != null && t.gameObject.scene.IsValid()) found++;
                 if (t == null || !t.gameObject.scene.IsValid()) continue;
                 var font = t.font;
                 if (font != null && Ours.Contains(font)) continue;
@@ -209,7 +211,8 @@ namespace OuterCraft.UI
                 if (t.resizeTextForBestFit) size = Mathf.Max(t.resizeTextMinSize, Mathf.Min(t.resizeTextMaxSize, size));
                 var mc = FontFor(size);
                 float baseSpacing = BaseSpacing.TryGetValue(mc, out var b) ? b : 0f;
-                if (baseSpacing < 0.01f) continue; // can't lay out lines with it
+                if (baseSpacing < 0.01f) { noSpacing++; continue; } // can't lay out lines with it
+                swapped++;
                 Swapped[t] = new Saved { Font = font, Size = t.fontSize, Style = t.fontStyle, LineSpacing = t.lineSpacing, BestFit = t.resizeTextForBestFit };
                 // a bitmap font has one size and no styles: those settings only produce warnings
                 t.fontSize = 0;
@@ -217,6 +220,16 @@ namespace OuterCraft.UI
                 t.resizeTextForBestFit = false;
                 t.lineSpacing = t.lineSpacing * size * 1.125f / baseSpacing;
                 t.font = mc;
+            }
+            if (!_reported)
+            {
+                _reported = true;
+                var tmp = System.Type.GetType("TMPro.TMP_Text, Unity.TextMeshPro");
+                int tmps = 0;
+                if (tmp != null) foreach (var o in Resources.FindObjectsOfTypeAll(tmp)) if (o is Component c && c.gameObject.scene.IsValid()) tmps++;
+                float sp = 0f;
+                foreach (var kv in BaseSpacing) { sp = kv.Value; break; }
+                OuterCraft.Log($"font: {found} UI texts, {swapped} swapped, {noSpacing} without line spacing (base {sp}), {tmps} TextMeshPro texts");
             }
         }
 
@@ -239,6 +252,7 @@ namespace OuterCraft.UI
         /// A new scene: the old texts are gone.
         public static void Forget()
         {
+            _reported = false;
             Swapped.Clear();
             _on = false;
         }
