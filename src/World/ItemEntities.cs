@@ -161,7 +161,7 @@ namespace OuterCraft.World
         }
 
         /// The item's model with its "ground" display transform, lifted by 0.25 * scale.y (ItemEntityRenderer).
-        private Mesh MeshFor(ItemDef item)
+        public Mesh MeshFor(ItemDef item)
         {
             if (_meshes.TryGetValue(item, out var m) && m != null) return m;
             m = new Mesh { name = "item_" + item.Key };

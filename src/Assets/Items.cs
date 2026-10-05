@@ -41,7 +41,7 @@ namespace OuterCraft.Assets
         {
             "stick", "coal", "charcoal", "raw_iron", "iron_ingot", "raw_gold", "gold_ingot", "diamond", "iron_nugget",
             "glowstone_dust", "flint", "wheat_seeds", "apple", "clay_ball", "brick", "snowball", "book", "paper",
-            "melon_slice", "prismarine_crystals", "string", "feather", "leather", "flint_and_steel", "elytra", "firework_rocket", "ender_eye", "lava_bucket", "cod", "clock",
+            "melon_slice", "prismarine_crystals", "string", "feather", "leather", "flint_and_steel", "elytra", "firework_rocket", "ender_eye", "ender_pearl", "lava_bucket", "cod", "clock",
         };
 
         private static readonly (string mat, int tier, float speed)[] Materials =
@@ -54,7 +54,7 @@ namespace OuterCraft.Assets
             if (All.Count > 0) return;
             foreach (var b in Blocks.All)
                 if (b.ItemKey == null) Register(new ItemDef { Key = b.Key, Block = b, MaxStack = b.Place == PlaceKind.Bed ? 1 : 64 });
-            foreach (var k in Plain) Register(new ItemDef { Key = k, MaxStack = k == "snowball" ? 16 : k == "flint_and_steel" || k == "elytra" ? 1 : 64 });
+            foreach (var k in Plain) Register(new ItemDef { Key = k, MaxStack = k == "snowball" || k == "ender_pearl" ? 16 : k == "flint_and_steel" || k == "elytra" ? 1 : 64 });
             foreach (var (mat, tier, speed) in Materials)
             {
                 // Minecraft's attack damage: sword 4/5/6/4/7, axe 7/9/9/7/9, pickaxe 2/3/4/2/5, shovel 2.5/3.5/4.5/2.5/5.5

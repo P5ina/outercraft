@@ -19,6 +19,7 @@ namespace OuterCraft.Assets
         public static Texture2D Font;
         public static readonly int[] GlyphWidth = new int[256];
         public static Texture2D Sga;
+        public static Texture2D EndCrystal;
         public static readonly int[] SgaWidth = new int[256];
         public static bool SkinSlim;
         public static readonly Dictionary<string, Texture2D> Gui = new Dictionary<string, Texture2D>();
@@ -90,6 +91,7 @@ namespace OuterCraft.Assets
                 Skin = skin?.ToTexture();
                 Wings = (jar.LoadImage("assets/minecraft/textures/entity/equipment/wings/elytra.png", false)
                          ?? jar.LoadImage("assets/minecraft/textures/entity/elytra.png", false))?.ToTexture();   // before 1.21.2
+                EndCrystal = jar.LoadImage("assets/minecraft/textures/entity/end_crystal/end_crystal.png", false)?.ToTexture();
                 var font = jar.LoadImage("assets/minecraft/textures/font/ascii.png", false);
                 if (font != null)
                 {

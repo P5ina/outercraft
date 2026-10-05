@@ -42,6 +42,7 @@ namespace OuterCraft
         private readonly Sleep _sleep = new Sleep();
         private readonly NomaiRunes _runes = new NomaiRunes();
         private readonly McMusic _music = new McMusic();
+        private readonly WarpCores _cores = new WarpCores();
         private bool _inSolarSystem;
         private bool _ready;
 
@@ -66,6 +67,8 @@ namespace OuterCraft
                 prefix: new HarmonyLib.HarmonyMethod(typeof(OuterCraft), nameof(EquipToolPrefix)));
             harmony.Patch(HarmonyLib.AccessTools.Method(typeof(OWInput), nameof(OWInput.GetAxisValue)),
                 postfix: new HarmonyLib.HarmonyMethod(typeof(OuterCraft), nameof(MoveAxisPostfix)));
+            harmony.Patch(HarmonyLib.AccessTools.Method(typeof(WarpCoreItem), nameof(WarpCoreItem.GetDisplayName)),
+                postfix: new HarmonyLib.HarmonyMethod(typeof(WarpCores), nameof(WarpCores.DisplayNamePostfix)));
 
             var go = new GameObject("OuterCraft_World");
             DontDestroyOnLoad(go);
@@ -92,6 +95,7 @@ namespace OuterCraft
                 _inSolarSystem = false;
                 _sleep.Forget();
                 _runes.Forget();
+                _cores.Clear();
                 HandsBusy = false;
                 InvertMove = false;
                 _body.Clear();
@@ -178,6 +182,8 @@ namespace OuterCraft
             if (controller == null || cam == null) return;
 
             _sleep.Update(_minecraftMode);
+            WarpCores.Enabled = _minecraftMode;
+            _cores.Update(_minecraftMode);
             _music.Update(_minecraftMode, TimeLoop.IsTimeFlowing() && TimeLoop.GetSecondsRemaining() < 90f);
 
             var kb = Keyboard.current;

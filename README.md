@@ -38,6 +38,8 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
   enchanting table's runes (the real words, letter for letter) and decodes them one by one.
 - **Beds**: lie down and time runs fast like at a campfire, under Minecraft's sleep darkness.
   *You may not rest now; the Sun is exploding.* (Bed models need Minecraft 26.1 or newer.)
+- **The advanced warp core is an End Crystal**, turning and bobbing like on the End's pillars (the
+  broken one a dead, still crystal); the small warp cores are an Eye of Ender and an Ender Pearl.
 - **C418's music** at the start of every loop, quietly over the Hearthian system's own sounds.
 - **Builds reset with the loop**, like everything else in the Hearthian system.
 
