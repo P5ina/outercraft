@@ -41,7 +41,7 @@ namespace OuterCraft.Assets
         {
             "stick", "coal", "charcoal", "raw_iron", "iron_ingot", "raw_gold", "gold_ingot", "diamond", "iron_nugget",
             "glowstone_dust", "flint", "wheat_seeds", "apple", "clay_ball", "brick", "snowball", "book", "paper",
-            "melon_slice", "prismarine_crystals", "string", "feather", "leather", "flint_and_steel", "elytra", "firework_rocket",
+            "melon_slice", "prismarine_crystals", "string", "feather", "leather", "flint_and_steel", "elytra", "firework_rocket", "ender_eye", "lava_bucket", "cod", "clock",
         };
 
         private static readonly (string mat, int tier, float speed)[] Materials =

@@ -34,6 +34,7 @@ namespace OuterCraft.Assets
             "hud/heart/container", "hud/heart/full", "hud/heart/half",
             "hud/food_empty", "hud/food_full", "hud/food_half",
             "hud/air", "hud/air_empty", "hud/experience_bar_background",
+            "toast/advancement", "widget/button", "widget/button_highlighted",
         };
 
         public static readonly string[] Containers =

@@ -324,6 +324,7 @@ namespace OuterCraft.UI
         /// One of everything in the grid used up.
         private void Consume()
         {
+            if (_recipe != null) Advancements.OnCrafted(_recipe.Result.Key);
             for (int i = 0; i < _grid.Length; i++)
             {
                 if (_grid[i] == null) continue;

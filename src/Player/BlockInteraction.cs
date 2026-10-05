@@ -298,6 +298,7 @@ namespace OuterCraft.Player
 
             pb.Set(cell, 0);
             NetherPortal.Instance?.OnRemoved(pb, cell);
+            if (depth == 0) UI.Advancements.OnMined(def.Key);
             McSounds.Break(def, center, pb.transform);
             pb.GetComponent<BlockParticles>()?.Burst(pb.Grid, cell, def);
 

@@ -90,6 +90,7 @@ namespace OuterCraft
                 _body.Clear();
                 _bodyState = 0;
                 _steve.Destroy();
+                _voices.Unhook();
                 _figure.Clear();
                 _portal.Clear();
                 _combat.Clear();
@@ -109,8 +110,17 @@ namespace OuterCraft
                 {
                     _inSolarSystem = true;
                     _inv.ResetToKit(); // a new loop: the kit again, nothing carried over
+                    _death.OnNewLoop();
+                    _voices.Hook();
+                    if (_loops > 0)
+                    {
+                        if (DeathScreen.LastDeath == DeathType.Digestion) Advancements.Grant("fishy");
+                        Advancements.Grant("the_end");
+                    }
+                    _loops++;
                 });
             };
+            GlobalMessenger<DeathType>.AddListener("PlayerDeath", type => { if (_minecraftMode && _inSolarSystem) _death.OnDeath(type); });
             ModHelper.Console.WriteLine("OuterCraft ready. G toggles Minecraft mode.", MessageType.Success);
         }
 
@@ -125,6 +135,8 @@ namespace OuterCraft
             _inv.Creative = _creative;
             _reach = config.GetSettingsValue<float>("reach");
             _skin = config.GetSettingsValue<string>("skin") ?? "steve";
+            var name = config.GetSettingsValue<string>("playerName");
+            _death.PlayerName = string.IsNullOrWhiteSpace(name) ? "Steve" : name.Trim();
             _interaction.Reach = _reach > 0 ? _reach : 5f;
             float bright = config.GetSettingsValue<float>("blockBrightness");
             if (bright <= 0.05f) bright = 0.85f;
@@ -203,6 +215,8 @@ namespace OuterCraft
             Sounds(controller, active);
             HideOwnBody(third ? 2 : hands ? 1 : 0);
             _portal.Update(_inv.Creative);
+            _voices.Enabled = _minecraftMode;
+            Milestones(active);
             _figure.Update(_minecraftMode);
             _combat.Update();
             _elytra.Update(_inv, active && !_screen.IsOpen && !PlayerState.InZeroG());
@@ -254,6 +268,23 @@ namespace OuterCraft
         private static void MoveAxisPostfix(IInputCommands command, ref Vector2 __result)
         {
             if (InvertMove && command == InputLibrary.moveXZ) __result = -__result;
+        }
+
+        private readonly DeathScreen _death = new DeathScreen();
+        private readonly VillagerVoices _voices = new VillagerVoices();
+        private static int _loops;
+        private float _nextMilestone;
+
+        /// Advancements for places: in Minecraft mode at all, inside Dark Bramble, close to the Sun.
+        private void Milestones(bool active)
+        {
+            if (!_minecraftMode || Time.unscaledTime < _nextMilestone) return;
+            _nextMilestone = Time.unscaledTime + 0.5f;
+            if (active) Advancements.Grant("minecraft");
+            if (PlayerState.InBrambleDimension()) Advancements.Grant("deeper");
+            var sun = Locator.GetAstroObject(AstroObject.Name.Sun);
+            var body = Locator.GetPlayerBody();
+            if (sun != null && body != null && (sun.transform.position - body.GetPosition()).magnitude < 4500f) Advancements.Grant("hot_tourist");
         }
 
         private void FixedUpdate()
@@ -337,6 +368,8 @@ namespace OuterCraft
                     "OuterCraft: Minecraft Java Edition not found.\nInstall Minecraft 1.21.4 or newer and launch it once, or set 'Minecraft jar' in the mod's settings.", _warnStyle);
             }
             if (_ready && _inSolarSystem) _portal.DrawOverlay();
+            if (_ready && _inSolarSystem && _minecraftMode) _death.Draw();
+            if (_ready && _inSolarSystem) Advancements.Draw(_minecraftMode && !PlayerState.IsDead());
             if (_ready && _inSolarSystem && _minecraftMode && (OnFoot() || _screen.IsOpen))
             {
                 var res = Locator.GetPlayerBody()?.GetComponent<PlayerResources>();

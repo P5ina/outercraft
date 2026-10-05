@@ -42,6 +42,7 @@ namespace OuterCraft.Player
         {
             Gliding = true;
             _flyTime = 0;
+            UI.Advancements.Grant("skys_the_limit");
             _haveLast = false;
             _pullSeen = 1f;
             _savedAirAccel = c._airAcceleration;

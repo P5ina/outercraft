@@ -121,6 +121,7 @@ namespace OuterCraft.Player
             if (n.Health <= 0)
             {
                 n.DeathTime = 0f;
+                UI.Advancements.Grant("monster_hunter");
                 McSounds.Play("villager.death", at, frame, 1f, (float)(Rng.NextDouble() - Rng.NextDouble()) * 0.2f + 1f);
                 // no more talking
                 if (a._dialogueTree != null) a._dialogueTree.gameObject.SetActive(false);

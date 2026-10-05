@@ -28,6 +28,12 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
 - **Nether portal**: an obsidian frame lit with flint and steel opens onto Dark Bramble.
 - **Steve** in third person (F5), with Minecraft's animations, held item and elytra.
 - **Hit Hearthians** like villagers. Everyone is back next loop.
+- **Minecraft deaths**: the red "You died!" screen over every Outer Wilds death, with its own death
+  message (*Steve was blown up by the Sun*, *Steve was eaten by an Anglerfish*, *Steve fell out of
+  the world*…), repeated in chat when the next loop starts.
+- **Advancements** for Outer Wilds milestones: *We Need to Go Deeper* (Dark Bramble), *Hot Tourist
+  Destinations* (the Sun), *Sky's the Limit*, *Fishy Business*, *The End?* and more.
+- **Hearthians talk like villagers**: a "hmm" on every page of dialogue.
 - **Builds reset with the loop**, like everything else in the Hearthian system.
 
 ## Requirements
@@ -74,6 +80,7 @@ In the suit, a tap of Space is Minecraft's jump; hold it in the air for the jetp
 | guiScale | 0 | Minecraft GUI scale, 0 = auto |
 | reach | 5 | Block reach in metres |
 | skin | steve | Default skin from the jar: steve, alex, kai, zuri, … |
+| playerName | Steve | Your name in death messages |
 | blockBrightness | 0.85 | Tone Minecraft's bright textures down to Outer Wilds' palette |
 | outerWildsShading | on | Draw blocks with Outer Wilds' own shader (off: OuterCraft's Minecraft shader) |
 

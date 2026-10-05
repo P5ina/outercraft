@@ -56,7 +56,7 @@ namespace OuterCraft.UI
             return w - 1;
         }
 
-        public static void Text(string s, float x, float y, Color color, bool shadow = true)
+        public static void Text(string s, float x, float y, Color color, bool shadow = true, float scale = 1f)
         {
             var font = McAssets.Font;
             if (font == null) return;
@@ -65,14 +65,17 @@ namespace OuterCraft.UI
             {
                 // Minecraft's drop shadow: the same text a pixel down-right at a quarter brightness.
                 GUI.color = new Color(color.r * 0.25f, color.g * 0.25f, color.b * 0.25f, color.a);
-                Glyphs(font, s, x + 1, y + 1);
+                Glyphs(font, s, x + scale, y + scale, scale);
             }
             GUI.color = color;
-            Glyphs(font, s, x, y);
+            Glyphs(font, s, x, y, scale);
             GUI.color = old;
         }
 
-        private static void Glyphs(Texture2D font, string s, float x, float y)
+        public static void TextCentered(string s, float cx, float y, Color color, float scale = 1f) =>
+            Text(s, cx - TextWidth(s) * scale / 2f, y, color, true, scale);
+
+        private static void Glyphs(Texture2D font, string s, float x, float y, float scale)
         {
             foreach (char ch in s)
             {
@@ -80,11 +83,18 @@ namespace OuterCraft.UI
                 if (c != ' ')
                 {
                     float u = (c % 16) / 16f, v = 1f - (c / 16 + 1) / 16f;
-                    GUI.DrawTextureWithTexCoords(new Rect(Mathf.Round(x * S), Mathf.Round(y * S), 8 * S, 8 * S), font,
+                    GUI.DrawTextureWithTexCoords(new Rect(Mathf.Round(x * S), Mathf.Round(y * S), 8 * S * scale, 8 * S * scale), font,
                         new Rect(u, v, 1f / 16f, 1f / 16f), true);
                 }
-                x += McAssets.GlyphWidth[c];
+                x += McAssets.GlyphWidth[c] * scale;
             }
+        }
+
+        /// A 200x20 Minecraft button with its label (no clicks: it's for show).
+        public static void Button(string label, float x, float y, float w = 200, float h = 20, bool hover = false)
+        {
+            Sprite(hover ? "widget/button_highlighted" : "widget/button", x, y, w, h);
+            TextCentered(label, x + w / 2f, y + (h - 8) / 2f, Color.white);
         }
 
         /// GuiGraphics.renderItem + renderItemDecorations: the 16x16 icon and the count, right-aligned.
