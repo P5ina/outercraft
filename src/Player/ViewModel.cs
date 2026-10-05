@@ -32,7 +32,7 @@ namespace OuterCraft.Player
         private float _walkDist, _bob;
         public float WalkDist => _walkDist; // Minecraft's moveDist: a footstep every whole number
         public bool ViewBobbing = true;
-        private bool _bobApplied;
+        private bool _bobApplied, _viewMatrixSet;
         private Vector3 _savedPos;
         private Quaternion _savedRot;
 
@@ -83,7 +83,7 @@ namespace OuterCraft.Player
 
             // ---- Minecraft's pose stack, in its own camera space (x right, y up, -z forward)
             var m = Mat.Identity;
-            if (ViewBobbing) m = BobView(m);
+            // (view bob: comes from the camera's view matrix, which the hand renders with too)
             m = m * Mat.RotX((_pitch - _pitchBob) * 0.1f) * Mat.RotY((_yaw - _yawBob) * 0.1f);
 
             _verts.Clear(); _uvs.Clear(); _cols.Clear(); _tris.Clear(); _norms.Clear(); _uv2s.Clear();
@@ -201,26 +201,27 @@ namespace OuterCraft.Player
                 _bobApplied = true;
                 return;
             }
-            if (!_bobEnabledThisFrame)
-            {
-                t.localPosition = _savedPos + shift;
-                _bobApplied = true;
-                return;
-            }
-            // Minecraft moves the world by B in view space; we move the camera by B's inverse.
-            var b = BobView(Mat.Identity).ToUnity();
-            var inv = b.inverse;
-            var local = Matrix4x4.TRS(_savedPos + shift, _savedRot, Vector3.one) * inv;
-            t.localPosition = local.GetColumn(3);
-            t.localRotation = local.rotation;
+            // Minecraft moves the world by B in view space. Done on the view matrix only, not the
+            // camera's transform: the game's HUD markers (worked out from the transform) then stay
+            // steady instead of shaking with every step. The hand, a child of the camera, gets the
+            // same B from the view matrix.
+            var local = Matrix4x4.TRS(_savedPos + shift, _savedRot, Vector3.one);
+            if (_bobEnabledThisFrame) local *= BobView(Mat.Identity).ToUnity().inverse;
+            var world = t.parent != null ? t.parent.localToWorldMatrix * local : local;
+            cam.worldToCameraMatrix = Matrix4x4.Scale(new Vector3(1, 1, -1)) * world.inverse;
+            _viewMatrixSet = true;
             _bobApplied = true;
         }
 
         private void OnPostRender(Camera cam)
         {
             if (cam != _main || !_bobApplied) return;
-            cam.transform.localPosition = _savedPos;
-            cam.transform.localRotation = _savedRot;
+            if (_viewMatrixSet) { cam.ResetWorldToCameraMatrix(); _viewMatrixSet = false; }
+            else
+            {
+                cam.transform.localPosition = _savedPos;
+                cam.transform.localRotation = _savedRot;
+            }
             _bobApplied = false;
         }
 
