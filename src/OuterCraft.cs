@@ -34,6 +34,7 @@ namespace OuterCraft
         private readonly SuitFigure _figure = new SuitFigure();
         private readonly InventoryScreen _screen = new InventoryScreen();
         private bool _creative;
+        private bool _fontEnabled = true;
         private float _nextInvSave;
         private readonly McMovement _movement = new McMovement();
         private readonly BlockInteraction _interaction = new BlockInteraction();
@@ -97,6 +98,7 @@ namespace OuterCraft
                 _runes.Forget();
                 _cores.Clear();
                 _spyglass.Clear();
+                McFont.Forget();
                 HandsBusy = false;
                 _body.Clear();
                 _bodyState = 0;
@@ -156,6 +158,7 @@ namespace OuterCraft
             _reach = config.GetSettingsValue<float>("reach");
             _skin = config.GetSettingsValue<string>("skin") ?? "auto";
             _music.Volume = Mathf.Clamp01(config.GetSettingsValue<float>("musicVolume"));
+            _fontEnabled = config.GetSettingsValue<bool>("minecraftFont");
             var name = config.GetSettingsValue<string>("playerName");
             _death.PlayerName = string.IsNullOrWhiteSpace(name) ? "Steve" : name.Trim();
             _interaction.Reach = _reach > 0 ? _reach : 5f;
@@ -192,6 +195,7 @@ namespace OuterCraft
             _sleep.Update(_minecraftMode);
             WarpCores.Enabled = _minecraftMode;
             _cores.Update(_minecraftMode);
+            McFont.Update(_minecraftMode && _fontEnabled);
             _music.Update(_minecraftMode, TimeLoop.IsTimeFlowing() && TimeLoop.GetSecondsRemaining() < 90f);
 
             var kb = Keyboard.current;

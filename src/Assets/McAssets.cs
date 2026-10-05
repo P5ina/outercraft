@@ -101,6 +101,7 @@ namespace OuterCraft.Assets
                     Font = font.ToTexture();
                     MeasureGlyphs(font);
                 }
+                UI.McFont.Load(jar);
                 // the enchanting table's Standard Galactic Alphabet (font "minecraft:alt")
                 var sga = jar.LoadImage("assets/minecraft/textures/font/ascii_sga.png", false);
                 if (sga != null)

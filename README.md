@@ -42,6 +42,7 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
   broken one a dead, still crystal); the small warp cores are an Eye of Ender and an Ender Pearl.
 - **The signalscope is a spyglass**: Minecraft's hand holds a spyglass, and zooming in brings up
   Minecraft's spyglass scope. Frequencies and signals work as always.
+- **Minecraft's font** for Outer Wilds' own text: prompts, dialogue, the ship log, signs (Latin, Cyrillic, Greek).
 - **C418's music** at the start of every loop, quietly over the Hearthian system's own sounds.
 - **Builds reset with the loop**, like everything else in the Hearthian system.
 
@@ -93,6 +94,7 @@ Shift and the rest of the jetpack controls are Outer Wilds' own.
 | blockBrightness | 0.85 | Tone Minecraft's bright textures down to Outer Wilds' palette |
 | outerWildsShading | on | Draw blocks with Outer Wilds' own shader (off: OuterCraft's Minecraft shader) |
 | musicVolume | 0.3 | Volume of C418's music at the start of a loop (0 = off) |
+| minecraftFont | on | Outer Wilds' text in Minecraft's font while in Minecraft mode |
 
 ## Building
 

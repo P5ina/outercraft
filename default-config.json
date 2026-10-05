@@ -17,6 +17,7 @@
     "outerWildsShading": true,
     "skin": "auto",
     "playerName": "Steve",
-    "musicVolume": 0.3
+    "musicVolume": 0.3,
+    "minecraftFont": true
   }
 }
