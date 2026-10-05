@@ -46,6 +46,9 @@ namespace OuterCraft.Player
 
         /// 0: first person, 1: third person from behind, 2: from the front (F5).
         public int Perspective;
+        public bool Sneaking;
+        private const float SneakDrop = 1.62f - 1.27f; // Minecraft's standing and crouching eye heights
+        private float _sneakOffset;
         private bool _thirdThisFrame;
         public float Speed { get; private set; }          // m/s over the ground
         public float Pitch => _pitch;                     // Minecraft's pitch, degrees, + looking down
@@ -62,10 +65,11 @@ namespace OuterCraft.Player
             _thirdThisFrame = third;
             _root.gameObject.SetActive(show && !third);
             _bobEnabledThisFrame = show && !third && ViewBobbing;
-            if (!show) return;
+            if (!show) { _sneakOffset = 0f; return; }
 
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             float ticks = dt * 20f;
+            _sneakOffset += ((Sneaking ? SneakDrop : 0f) - _sneakOffset) * (1f - Mathf.Pow(0.5f, ticks));
             UpdateLook(main, ticks);
             UpdateWalk(ticks);
             if (third) return;
@@ -175,15 +179,18 @@ namespace OuterCraft.Player
 
         private void OnPreCull(Camera cam)
         {
-            if (cam != _main || _bobApplied || !(_bobEnabledThisFrame || _thirdThisFrame)) return;
+            if (cam != _main || _bobApplied || !(_bobEnabledThisFrame || _thirdThisFrame || _sneakOffset > 0.001f)) return;
             var t = cam.transform;
             _savedPos = t.localPosition;
             _savedRot = t.localRotation;
+            // sneaking: the eyes come down (1.62 -> 1.27 blocks), eased half the way per tick
+            var bodyUp = Locator.GetPlayerBody() != null ? Locator.GetPlayerBody().transform.up : t.up;
+            var shift = t.parent != null ? t.parent.InverseTransformDirection(-bodyUp) * _sneakOffset : -bodyUp * _sneakOffset;
             if (_thirdThisFrame)
             {
                 // GameRenderer / Camera.setup: 4 blocks behind (or in front, looking back), pulled in
                 // short of walls
-                var eye = t.position;
+                var eye = t.position - bodyUp * _sneakOffset;
                 var fwd = t.forward;
                 var dir = Perspective == 1 ? -fwd : fwd;
                 float dist = 4f;
@@ -194,10 +201,16 @@ namespace OuterCraft.Player
                 _bobApplied = true;
                 return;
             }
+            if (!_bobEnabledThisFrame)
+            {
+                t.localPosition = _savedPos + shift;
+                _bobApplied = true;
+                return;
+            }
             // Minecraft moves the world by B in view space; we move the camera by B's inverse.
             var b = BobView(Mat.Identity).ToUnity();
             var inv = b.inverse;
-            var local = Matrix4x4.TRS(_savedPos, _savedRot, Vector3.one) * inv;
+            var local = Matrix4x4.TRS(_savedPos + shift, _savedRot, Vector3.one) * inv;
             t.localPosition = local.GetColumn(3);
             t.localRotation = local.rotation;
             _bobApplied = true;

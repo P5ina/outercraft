@@ -210,6 +210,7 @@ namespace OuterCraft
             if (kb != null && kb.f5Key.wasPressedThisFrame && active) _viewModel.Perspective = (_viewModel.Perspective + 1) % 3;
             bool third = hands && _viewModel.Perspective > 0;
             InvertMove = third && _viewModel.Perspective == 2;
+            _viewModel.Sneaking = hands && _movement.Sneaking && !_elytra.Gliding;
             _viewModel.Update(cam.mainCamera, _inv.CurrentItem, _inv.ChangedAt, hands);
             _steve.Update(third, _viewModel, _inv.CurrentItem, _movement.Sneaking, _elytra.Gliding, _inv.HasElytra);
             Sounds(controller, active);
