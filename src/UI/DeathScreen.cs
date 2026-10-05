@@ -12,6 +12,7 @@ namespace OuterCraft.UI
         private bool _dead;
         private float _diedAt;
         private string _message;
+        private static Texture2D _gradient;
 
         // carried over the scene reload into the next loop
         private static string _chatLine;
@@ -76,15 +77,19 @@ namespace OuterCraft.UI
             if (Event.current.type != EventType.Repaint) return;
             Begin();
             float a = Mathf.Clamp01((Time.unscaledTime - _diedAt) / 0.5f);
-            // fillGradient(0x60500000 -> 0xA0803030), drawn as bands
-            const int Bands = 24;
-            for (int i = 0; i < Bands; i++)
+            // fillGradient(0x60500000 -> 0xA0803030): one smooth vertical gradient texture
+            if (_gradient == null)
             {
-                float k = i / (float)(Bands - 1);
-                var c = Color.Lerp(new Color(0x50 / 255f, 0, 0, 0x60 / 255f), new Color(0x80 / 255f, 0x30 / 255f, 0x30 / 255f, 0xA0 / 255f), k);
-                c.a *= a;
-                Fill(0, H * i / Bands, W, H / Bands + 1, c);
+                _gradient = new Texture2D(1, 256, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+                for (int i = 0; i < 256; i++)
+                    _gradient.SetPixel(0, i, Color.Lerp(new Color(0x80 / 255f, 0x30 / 255f, 0x30 / 255f, 0xA0 / 255f),
+                        new Color(0x50 / 255f, 0, 0, 0x60 / 255f), i / 255f)); // row 0 is the bottom
+                _gradient.Apply(false, false);
             }
+            var old = GUI.color;
+            GUI.color = new Color(1, 1, 1, a);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), _gradient, ScaleMode.StretchToFill, true);
+            GUI.color = old;
             var white = new Color(1, 1, 1, a);
             TextCentered("You died!", W / 2f, 30f, white, 2f);
             TextCentered(_message ?? "", W / 2f, 85f, white);
