@@ -9,13 +9,14 @@ using Image = OuterCraft.Assets.Image;
 namespace OuterCraft.UI
 {
     /// Outer Wilds' UI text in Minecraft's font: the bitmap providers of the jar's default font
-    /// (ascii, accented, nonlatin_european: Latin, Cyrillic, Greek...) packed into one texture and
-    /// turned into Unity bitmap fonts, one per text size, since a bitmap font can't be scaled.
-    /// Every UI Text in the scene gets the font of its size in Minecraft mode and its own back
-    /// outside it. Layout keeps close to the original: Minecraft's line height of 9 per 8.
+    /// (ascii, accented, nonlatin_european: Latin, Cyrillic, Greek...) packed into one texture.
+    /// Outer Wilds keeps laying its text out with its own font (so boxes, wrapping and scrolling
+    /// stay right: a font made at runtime can't even be given a line height); its glyphs are made
+    /// transparent and Minecraft's are drawn over them, each word in Minecraft's own spacing fitted
+    /// to the width the game gave it. Rich-text colours and bold come along.
     public static class McFont
     {
-        private struct Glyph
+        internal struct Glyph
         {
             public int Code;
             public Rect Uv;           // in the packed texture
@@ -25,12 +26,10 @@ namespace OuterCraft.UI
         }
 
         private static readonly List<Glyph> Glyphs = new List<Glyph>();
+        private static readonly Dictionary<int, Glyph> ByCode = new Dictionary<int, Glyph>();
         private static Texture2D _tex;
         private static Material _mat;
         private static bool _loaded, _failed;
-        private static readonly Dictionary<int, Font> Fonts = new Dictionary<int, Font>();
-        private static readonly Dictionary<Font, float> BaseSpacing = new Dictionary<Font, float>();
-        private static readonly HashSet<Font> Ours = new HashSet<Font>();
 
         // ---------------------------------------------------------------- loading (FontManager)
 
@@ -100,6 +99,7 @@ namespace OuterCraft.UI
             }
             if (!seen.Contains(' ')) Glyphs.Add(new Glyph { Code = ' ', Advance = 4f, Top = 7, Height = 8 });
             _tex = atlas.ToTexture();
+            foreach (var g in Glyphs) ByCode[g.Code] = g;
             _mat = new Material(Shader.Find("UI/Default")) { mainTexture = _tex, name = "OuterCraft_Font" };
             OuterCraft.Log($"Minecraft font: {Glyphs.Count} glyphs");
         }
@@ -116,145 +116,243 @@ namespace OuterCraft.UI
             return rows;
         }
 
-        // ---------------------------------------------------------------- fonts per size
+        // ---------------------------------------------------------------- texts
 
-        /// A bitmap font drawing Minecraft's glyphs at `size` pixels per 8 Minecraft pixels, with
-        /// glyphs placed under the line top the way the text generator really lays them out.
-        private static Font FontFor(int size)
-        {
-            if (Fonts.TryGetValue(size, out var f)) return f;
-            float px = size / 8f;
-            f = new Font("Minecraft " + size) { material = _mat };
-            f.characterInfo = Infos(px, 0f);
-            // the generator's real line spacing and where it puts a glyph, for this font
-            var gen = new TextGenerator();
-            var st = new TextGenerationSettings
-            {
-                font = f, fontSize = 0, lineSpacing = 1f, richText = false, scaleFactor = 1f, color = Color.white,
-                generationExtents = new Vector2(10000, 10000), pivot = new Vector2(0, 1), textAnchor = TextAnchor.UpperLeft,
-                horizontalOverflow = HorizontalWrapMode.Overflow, verticalOverflow = VerticalWrapMode.Overflow, updateBounds = true,
-                generateOutOfBounds = true,
-            };
-            gen.Populate("A\nA", st);
-            float spacing = 0f, shift = 0f;
-            if (gen.lineCount >= 2) spacing = Mathf.Abs(gen.lines[0].topY - gen.lines[1].topY);
-            if (gen.vertexCount >= 4 && gen.lineCount >= 1)
-            {
-                var v = gen.verts;
-                float top = Mathf.Max(v[0].position.y, v[1].position.y, v[2].position.y, v[3].position.y);
-                // the cell top of 'A' (ascent 7 above the baseline) should sit half a pixel row under the line top
-                shift = gen.lines[0].topY - top - 0.5f * px;
-            }
-            if (Mathf.Abs(shift) > 0.01f) f.characterInfo = Infos(px, shift);
-            Fonts[size] = f;
-            BaseSpacing[f] = spacing;
-            Ours.Add(f);
-            return f;
-        }
-
-        private static CharacterInfo[] Infos(float px, float shift)
-        {
-            var infos = new CharacterInfo[Glyphs.Count];
-            for (int i = 0; i < Glyphs.Count; i++)
-            {
-                var g = Glyphs[i];
-                var ci = new CharacterInfo { index = g.Code, advance = Mathf.RoundToInt(g.Advance * px) };
-                ci.uvBottomLeft = new Vector2(g.Uv.xMin, g.Uv.yMin);
-                ci.uvBottomRight = new Vector2(g.Uv.xMax, g.Uv.yMin);
-                ci.uvTopLeft = new Vector2(g.Uv.xMin, g.Uv.yMax);
-                ci.uvTopRight = new Vector2(g.Uv.xMax, g.Uv.yMax);
-                ci.minX = 0;
-                ci.maxX = Mathf.RoundToInt(g.Width * px);
-                ci.maxY = Mathf.RoundToInt(g.Top * px + shift);
-                ci.minY = Mathf.RoundToInt((g.Top - g.Height) * px + shift);
-                infos[i] = ci;
-            }
-            return infos;
-        }
-
-        // ---------------------------------------------------------------- swapping
-
-        private struct Saved
-        {
-            public Font Font;
-            public int Size;
-            public FontStyle Style;
-            public float LineSpacing;
-            public bool BestFit;
-        }
-
-        private static readonly Dictionary<Text, Saved> Swapped = new Dictionary<Text, Saved>();
+        private static readonly List<McTextLayer> Layers = new List<McTextLayer>();
+        private static readonly HashSet<Text> Seen = new HashSet<Text>();
         private static float _next;
         private static bool _on, _reported;
+
+        internal static Texture2D Texture => _tex;
+        internal static bool TryGlyph(int code, out Glyph g) => ByCode.TryGetValue(code, out g) || ByCode.TryGetValue('?', out g);
 
         public static void Update(bool enabled)
         {
             if (!_loaded || _failed) return;
-            if (!enabled)
+            if (enabled != _on)
             {
-                if (_on) RestoreAll();
-                _on = false;
-                return;
+                _on = enabled;
+                foreach (var l in Layers) if (l != null) l.SetOn(enabled);
             }
-            _on = true;
+            if (!enabled) return;
+
+            Layers.RemoveAll(l => l == null);
+            foreach (var l in Layers) l.Follow();
+
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + 1f;
-            int found = 0, swapped = 0, noSpacing = 0;
+            int found = 0;
             foreach (var t in Resources.FindObjectsOfTypeAll<Text>())
             {
-                if (t != null && t.gameObject.scene.IsValid()) found++;
                 if (t == null || !t.gameObject.scene.IsValid()) continue;
-                var font = t.font;
-                if (font != null && Ours.Contains(font)) continue;
-                // new, or the game set its own font again (the translator does per language)
-                int size = t.fontSize > 0 ? t.fontSize : 14;
-                if (t.resizeTextForBestFit) size = Mathf.Max(t.resizeTextMinSize, Mathf.Min(t.resizeTextMaxSize, size));
-                var mc = FontFor(size);
-                float baseSpacing = BaseSpacing.TryGetValue(mc, out var b) ? b : 0f;
-                if (baseSpacing < 0.01f) { noSpacing++; continue; } // can't lay out lines with it
-                swapped++;
-                Swapped[t] = new Saved { Font = font, Size = t.fontSize, Style = t.fontStyle, LineSpacing = t.lineSpacing, BestFit = t.resizeTextForBestFit };
-                // a bitmap font has one size and no styles: those settings only produce warnings
-                t.fontSize = 0;
-                t.fontStyle = FontStyle.Normal;
-                t.resizeTextForBestFit = false;
-                t.lineSpacing = t.lineSpacing * size * 1.125f / baseSpacing;
-                t.font = mc;
+                found++;
+                if (!Seen.Add(t)) continue;
+                var layer = McTextLayer.Create(t);
+                layer.SetOn(true);
+                Layers.Add(layer);
             }
             if (!_reported)
             {
                 _reported = true;
-                var tmp = System.Type.GetType("TMPro.TMP_Text, Unity.TextMeshPro");
-                int tmps = 0;
-                if (tmp != null) foreach (var o in Resources.FindObjectsOfTypeAll(tmp)) if (o is Component c && c.gameObject.scene.IsValid()) tmps++;
-                float sp = 0f;
-                foreach (var kv in BaseSpacing) { sp = kv.Value; break; }
-                OuterCraft.Log($"font: {found} UI texts, {swapped} swapped, {noSpacing} without line spacing (base {sp}), {tmps} TextMeshPro texts");
+                OuterCraft.Log($"font: Minecraft glyphs over {found} UI texts");
             }
-        }
-
-        private static void RestoreAll()
-        {
-            foreach (var kv in Swapped)
-            {
-                var t = kv.Key;
-                if (t == null || !Ours.Contains(t.font)) continue;
-                var s = kv.Value;
-                t.font = s.Font;
-                t.fontSize = s.Size;
-                t.fontStyle = s.Style;
-                t.lineSpacing = s.LineSpacing;
-                t.resizeTextForBestFit = s.BestFit;
-            }
-            Swapped.Clear();
         }
 
         /// A new scene: the old texts are gone.
         public static void Forget()
         {
+            Layers.Clear();
+            Seen.Clear();
             _reported = false;
-            Swapped.Clear();
-            _on = false;
+        }
+    }
+
+    /// Makes a Text's own glyphs transparent while the Minecraft layer draws them.
+    public sealed class McTextHider : BaseMeshEffect
+    {
+        public bool On;
+        public bool Changed;
+        private readonly List<UIVertex> _verts = new List<UIVertex>();
+
+        public override void ModifyMesh(VertexHelper vh)
+        {
+            Changed = true;
+            if (!IsActive() || !On) return;
+            var text = graphic as Text;
+            if (text == null || !McTextLayer.Mappable(text)) return;
+            _verts.Clear();
+            vh.GetUIVertexStream(_verts);
+            for (int i = 0; i < _verts.Count; i++)
+            {
+                var v = _verts[i];
+                v.color.a = 0;
+                _verts[i] = v;
+            }
+            vh.Clear();
+            vh.AddUIVertexTriangleStream(_verts);
+        }
+    }
+
+    /// Minecraft's glyphs where the Text put its own, over the same rect.
+    public sealed class McTextLayer : MaskableGraphic
+    {
+        private Text _text;
+        private McTextHider _hider;
+        private Color _lastColor;
+        private bool _on;
+
+        public static McTextLayer Create(Text text)
+        {
+            var go = new GameObject("OuterCraft_McText", typeof(RectTransform));
+            go.layer = text.gameObject.layer;
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(text.rectTransform, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            rt.pivot = text.rectTransform.pivot;
+            var layer = go.AddComponent<McTextLayer>();
+            layer._text = text;
+            layer.raycastTarget = false;
+            layer._hider = text.GetComponent<McTextHider>() ?? text.gameObject.AddComponent<McTextHider>();
+            return layer;
+        }
+
+        public override Texture mainTexture => McFont.Texture != null ? McFont.Texture : s_WhiteTexture;
+
+        public void SetOn(bool on)
+        {
+            _on = on;
+            if (_hider != null) { _hider.On = on; }
+            if (_text != null) _text.SetVerticesDirty();
+            SetVerticesDirty();
+        }
+
+        /// Every frame: the game fades and hides its texts in ways a child doesn't inherit.
+        public void Follow()
+        {
+            if (_text == null) return;
+            bool show = _on && _text.isActiveAndEnabled;
+            if (enabled != show) enabled = show;
+            if (!show) return;
+            canvasRenderer.SetAlpha(_text.canvasRenderer.GetAlpha());
+            if (_hider != null && _hider.Changed) { _hider.Changed = false; SetVerticesDirty(); }
+            else if (_text.color != _lastColor) SetVerticesDirty();
+            _lastColor = _text.color;
+        }
+
+        /// The generator gives one entry per character of the string (tags included).
+        public static bool Mappable(Text t)
+        {
+            var s = t.text;
+            if (string.IsNullOrEmpty(s)) return false;
+            var g = t.cachedTextGenerator;
+            return g.characterCount >= s.Length && g.lineCount > 0;
+        }
+
+        private static readonly System.Text.RegularExpressions.Regex Tag =
+            new System.Text.RegularExpressions.Regex(@"\G<(/?)(b|i|size|color|material|quad)(=[^>]*)?>", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        protected override void OnPopulateMesh(VertexHelper vh)
+        {
+            vh.Clear();
+            if (!_on || _text == null || McFont.Texture == null || !Mappable(_text)) return;
+            var str = _text.text;
+            var gen = _text.cachedTextGenerator;
+            var chars = gen.characters;
+            var lines = gen.lines;
+            float upp = 1f / Mathf.Max(0.0001f, _text.pixelsPerUnit);
+            float size = (_text.resizeTextForBestFit ? gen.fontSizeUsedForBestFit / Mathf.Max(0.0001f, _text.pixelsPerUnit) : _text.fontSize);
+            if (size <= 0) size = 14;
+            float p = size / 10f;                       // one Minecraft pixel; caps come out about the game's size
+            bool[] runes = _text.GetComponent<RuneHider>()?.Mask;
+
+            // per character: hidden (a tag), colour, bold
+            int n = str.Length;
+            var hidden = new bool[n];
+            var col = new Color[n];
+            var bold = new bool[n];
+            var colors = new Stack<Color>();
+            colors.Push(_text.color);
+            int bolds = _text.fontStyle == FontStyle.Bold || _text.fontStyle == FontStyle.BoldAndItalic ? 1 : 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (_text.supportRichText && str[i] == '<')
+                {
+                    var m = Tag.Match(str, i);
+                    if (m.Success)
+                    {
+                        bool close = m.Groups[1].Value == "/";
+                        var name = m.Groups[2].Value.ToLowerInvariant();
+                        if (name == "color")
+                        {
+                            if (close) { if (colors.Count > 1) colors.Pop(); }
+                            else
+                            {
+                                var arg = m.Groups[3].Value.TrimStart('=').Trim('"');
+                                colors.Push(ColorUtility.TryParseHtmlString(arg, out var c) ? new Color(c.r, c.g, c.b, c.a * _text.color.a) : colors.Peek());
+                            }
+                        }
+                        else if (name == "b") bolds = Mathf.Max(0, bolds + (close ? -1 : 1));
+                        for (int k = 0; k < m.Length; k++) hidden[i + k] = true;
+                        i += m.Length - 1;
+                        continue;
+                    }
+                }
+                col[i] = colors.Peek();
+                bold[i] = bolds > 0;
+            }
+
+            // words: runs of drawn characters on one line, laid out in Minecraft's advances and
+            // fitted to the span the game's own font gave them
+            int line = 0;
+            int a = 0;
+            while (a < n)
+            {
+                if (hidden[a] || char.IsWhiteSpace(str[a]) || (runes != null && a < runes.Length && runes[a])) { a++; continue; }
+                while (line + 1 < lines.Count && lines[line + 1].startCharIdx <= a) line++;
+                int lineEnd = line + 1 < lines.Count ? lines[line + 1].startCharIdx : int.MaxValue;
+                int b = a;
+                int last = a;
+                while (b + 1 < n && b + 1 < lineEnd && !char.IsWhiteSpace(str[b + 1]) && !(runes != null && b + 1 < runes.Length && runes[b + 1]))
+                {
+                    b++;
+                    if (!hidden[b]) last = b;
+                }
+                float x0 = chars[a].cursorPos.x, x1 = chars[last].cursorPos.x + chars[last].charWidth;
+                float natural = 0f;
+                for (int i = a; i <= last; i++) if (!hidden[i] && McFont.TryGlyph(str[i], out var g)) natural += g.Advance;
+                natural = Mathf.Max(1f, natural - 1f) * p / upp;
+                float k = Mathf.Clamp((x1 - x0) / natural, 0.5f, 2f);
+                var li = lines[line];
+                float baseline = (li.topY - li.height * 0.78f) * upp;
+                float x = x0 * upp;
+                for (int i = a; i <= last; i++)
+                {
+                    if (hidden[i] || !McFont.TryGlyph(str[i], out var g)) continue;
+                    float w = g.Width * p * k;
+                    if (w > 0f)
+                    {
+                        float top = baseline + g.Top * p, bottom = baseline + (g.Top - g.Height) * p;
+                        Quad(vh, x, bottom, x + w, top, g.Uv, col[i]);
+                        if (bold[i]) Quad(vh, x + p * k, bottom, x + w + p * k, top, g.Uv, col[i]);
+                    }
+                    x += g.Advance * p * k;
+                }
+                a = b + 1;
+            }
+        }
+
+        private static void Quad(VertexHelper vh, float x0, float y0, float x1, float y1, Rect uv, Color c)
+        {
+            int i = vh.currentVertCount;
+            Color32 cc = c;
+            vh.AddVert(new Vector3(x0, y0), cc, new Vector2(uv.xMin, uv.yMin));
+            vh.AddVert(new Vector3(x0, y1), cc, new Vector2(uv.xMin, uv.yMax));
+            vh.AddVert(new Vector3(x1, y1), cc, new Vector2(uv.xMax, uv.yMax));
+            vh.AddVert(new Vector3(x1, y0), cc, new Vector2(uv.xMax, uv.yMin));
+            vh.AddTriangle(i, i + 1, i + 2);
+            vh.AddTriangle(i + 2, i + 3, i);
         }
     }
 }
