@@ -309,7 +309,6 @@ namespace OuterCraft
         private void FixedUpdate()
         {
             if (!_ready || !_inSolarSystem) return;
-            _movement.FixedStep();
             _elytra.FixedStep();
         }
 

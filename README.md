@@ -22,8 +22,9 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
   can't be mined). **Creative** mode too.
 - **Inventory and crafting** (Tab) with Minecraft's screens and all the jar's shaped and shapeless
   recipes; 3x3 crafting at a crafting table.
-- **Minecraft movement** on Outer Wilds' gravity: walk/sprint/sneak speeds, a 1.25-block jump on
-  every planet, view bobbing, Minecraft's first-person hand and held items, footsteps.
+- **Minecraft movement** on Outer Wilds' gravity and controls: walk/sprint/sneak speeds, view
+  bobbing, Minecraft's first-person hand and held items, footsteps. Outer Wilds' own charge jump
+  and jetpack stay as they are.
 - **Elytra and firework rockets** with Minecraft's flight physics against each planet's pull.
 - **Nether portal**: an obsidian frame lit with flint and steel opens onto Dark Bramble.
 - **Steve** in third person (F5), with Minecraft's animations, held item and elytra.
@@ -69,12 +70,12 @@ your own Minecraft Java Edition installation**. None of it ships with the mod.
 | Q / Ctrl+Q | Drop one / drop stack |
 | Space in mid-air | Start gliding (elytra worn) |
 | Ctrl or double-tap W | Sprint |
-| Shift | Sneak |
+| Space (hold) | Sneak (Outer Wilds' crouch); release to jump, higher the longer you held it |
 | F5 | First person → behind → front |
 | [ ] | Creative: cycle every item in the held slot |
 | Shift / Space | Leave a bed |
 
-In the suit, a tap of Space is Minecraft's jump; hold it in the air for the jetpack.
+Shift and the rest of the jetpack controls are Outer Wilds' own.
 
 ## Settings
 

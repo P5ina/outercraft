@@ -351,7 +351,7 @@ namespace OuterCraft.Player
         private bool Use(Inventory inv)
         {
             var kb = Keyboard.current;
-            bool sneaking = kb != null && (kb.leftShiftKey.isPressed || kb.leftCtrlKey.isPressed);
+            bool sneaking = kb != null && kb.spaceKey.isPressed; // Outer Wilds' crouch is the sneak
 
             // interacting with the block comes first (unless sneaking with something in hand)
             if (Hit.HasValue && !(sneaking && inv.CurrentItem != null))
