@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>disable</Nullable>
+    <AssemblyName>OuterCraft</AssemblyName>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- Mod folder of Outer Wilds Mod Manager (override with -p:OutputPath=...) -->
+    <OutputPath>$(AppData)\OuterWildsModManager\OWML\Mods\P5INA.OuterCraft</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Assembly-CSharp, UnityEngine.*, OWML -->
+    <PackageReference Include="OuterWildsGameLibs" Version="1.1.*" IncludeAssets="compile" />
+    <PackageReference Include="OWML" Version="2.*" IncludeAssets="compile" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="UnityShaders/**" />
+    <None Remove="UnityShaders/**" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="manifest.json;default-config.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="bundle/outercraft.shaders" Condition="Exists('bundle/outercraft.shaders')" CopyToOutputDirectory="PreserveNewest" Link="outercraft.shaders" />
+  </ItemGroup>
+</Project>

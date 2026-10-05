@@ -1,0 +1,9 @@
+{
+  "filename": "OuterCraft.dll",
+  "author": "P5INA",
+  "name": "OuterCraft",
+  "uniqueName": "P5INA.OuterCraft",
+  "version": "1.0.0",
+  "owmlVersion": "2.12.0",
+  "description": "Minecraft, natively inside Outer Wilds: build on the planets, mine, craft, glide with elytra and fireworks. Textures and sounds come from your own Minecraft Java jar."
+}

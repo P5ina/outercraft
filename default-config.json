@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "settings": {
+    "minecraftJar": "",
+    "startInMinecraftMode": true,
+    "gameMode": {
+      "type": "selector",
+      "value": "survival",
+      "options": [
+        "survival",
+        "creative"
+      ]
+    },
+    "guiScale": 0,
+    "reach": 5.0,
+    "blockBrightness": 0.85,
+    "outerWildsShading": true,
+    "skin": "steve"
+  }
+}
