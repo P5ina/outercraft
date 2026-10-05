@@ -267,6 +267,7 @@ namespace OuterCraft.Assets
 
         private static readonly Dictionary<BlockDef, StateSpec> _specs = new Dictionary<BlockDef, StateSpec>();
         private static readonly Dictionary<ItemDef, McModels.Model> _itemModels = new Dictionary<ItemDef, McModels.Model>();
+        private static readonly Dictionary<ItemDef, McModels.Model> _itemGuiModels = new Dictionary<ItemDef, McModels.Model>();
         private static readonly Dictionary<ItemDef, List<(McModels.Model m, Vector3 off)>> _itemComposites = new Dictionary<ItemDef, List<(McModels.Model m, Vector3 off)>>();
 
         private static (McModels.Model, int, int) Apply(McModels models, JToken t)
@@ -318,6 +319,24 @@ namespace OuterCraft.Assets
                 string name = null;
                 var ij = models.Json($"assets/minecraft/items/{item.Key}.json");
                 if (ij?["model"] is JObject im && (string)im["type"] == "minecraft:model") name = (string)im["model"];
+                // "select" on the display context (the spyglass): the hand model is the fallback,
+                // the inventory icon the "gui" case
+                if (ij?["model"] is JObject sel && (string)sel["type"] == "minecraft:select" && (string)sel["property"] == "minecraft:display_context")
+                {
+                    var fb = sel["fallback"] as JObject;
+                    if (fb != null && (string)fb["type"] == "minecraft:model") name = (string)fb["model"];
+                    var gui = (sel["cases"] as JArray)?.OfType<JObject>().FirstOrDefault(c => c["when"] is JArray w && w.Any(x => (string)x == "gui") || (string)c["when"] == "gui");
+                    var gm = gui?["model"] as JObject;
+                    if (gm != null && (string)gm["type"] == "minecraft:model")
+                    {
+                        var guiModel = models.Load((string)gm["model"]);
+                        if (guiModel != null)
+                        {
+                            _itemGuiModels[item] = guiModel;
+                            foreach (var t in models.TexturesOf(guiModel)) tex.Add(t);
+                        }
+                    }
+                }
                 // composite item models (beds since 26.1: head + foot one block apart)
                 if (ij?["model"] is JObject cm && (string)cm["type"] == "minecraft:composite" && cm["models"] is JArray subs)
                 {
@@ -435,7 +454,12 @@ namespace OuterCraft.Assets
                 item.Model = models.Bake(m);
                 if (item.Model.Quads.Count == 0) { Items.Remove(item); continue; }
                 if (b != null) item.TintColor = b.TintColor;
-                if (m.Generated)
+                if (_itemGuiModels.TryGetValue(item, out var gm2) && gm2.Generated)
+                {
+                    var g0 = McModels.ResolveTex(gm2, "#layer0");
+                    item.Icon = g0 != null && TexImg.TryGetValue(g0, out var gimg) ? gimg.Tinted(item.TintColor).ToTexture() : null;
+                }
+                else if (m.Generated)
                 {
                     var l0 = McModels.ResolveTex(m, "#layer0");
                     item.Icon = l0 != null && TexImg.TryGetValue(l0, out var img) ? img.Tinted(item.TintColor).ToTexture() : null;

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace OuterCraft.Player
 {
     /// The signalscope as Minecraft's spyglass: the Outer Wilds prop is hidden and the hand holds a
-    /// flat spyglass item instead; zoomed in, Minecraft's spyglass scope frames the view
+    /// spyglass instead (its 3D in-hand model); zoomed in, Minecraft's spyglass scope frames the view
     /// (Gui.renderSpyglassOverlay). Frequencies, signals and the zoom itself stay Outer Wilds'.
     public sealed class Spyglass
     {
