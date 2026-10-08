@@ -119,7 +119,7 @@ namespace OuterCraft.UI
         // ---------------------------------------------------------------- texts
 
         private static readonly List<McTextLayer> Layers = new List<McTextLayer>();
-        private static readonly HashSet<Text> Seen = new HashSet<Text>();
+        private static readonly Dictionary<Text, McTextLayer> Seen = new Dictionary<Text, McTextLayer>();
         private static float _next;
         private static bool _on, _reported;
 
@@ -146,16 +146,39 @@ namespace OuterCraft.UI
             {
                 if (t == null || !t.gameObject.scene.IsValid()) continue;
                 found++;
-                if (!Seen.Add(t)) continue;
-                var layer = McTextLayer.Create(t);
-                layer.SetOn(true);
-                Layers.Add(layer);
+                Attach(t);
             }
             if (!_reported)
             {
                 _reported = true;
                 OuterCraft.Log($"font: Minecraft glyphs over {found} UI texts");
             }
+        }
+
+        private static McTextLayer Attach(Text t)
+        {
+            if (Seen.TryGetValue(t, out var have) && have != null) return have;
+            var layer = McTextLayer.Create(t);
+            layer.SetOn(_on);
+            Layers.Add(layer);
+            Seen[t] = layer;
+            return layer;
+        }
+
+        // Harmony hooks: a text gets its layer the moment it's enabled (not at the next scan, which
+        // showed new prompts in the game's font first), and the layer is rebuilt in the same pass
+        // as its text (not a frame later).
+        public static void TextOnEnablePostfix(Text __instance)
+        {
+            if (!_on || !_loaded || _failed || __instance == null || !__instance.gameObject.scene.IsValid()) return;
+            if (__instance.GetComponent<McTextLayer>() != null) return;
+            Attach(__instance);
+        }
+
+        public static void SetVerticesDirtyPostfix(Graphic __instance)
+        {
+            if (!_on || !(__instance is Text t)) return;
+            if (Seen.TryGetValue(t, out var layer) && layer != null) layer.SetVerticesDirty();
         }
 
         /// A new scene: the old texts are gone.
@@ -256,9 +279,12 @@ namespace OuterCraft.UI
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();
-            if (!_on || _text == null || McFont.Texture == null || !Mappable(_text)) return;
+            if (!_on || _text == null || McFont.Texture == null || string.IsNullOrEmpty(_text.text)) return;
             var str = _text.text;
+            // lay the text out now, whichever of the two rebuilds first (cached when unchanged)
             var gen = _text.cachedTextGenerator;
+            gen.PopulateWithErrors(str, _text.GetGenerationSettings(_text.rectTransform.rect.size), _text.gameObject);
+            if (!Mappable(_text)) return;
             var chars = gen.characters;
             var lines = gen.lines;
             float upp = 1f / Mathf.Max(0.0001f, _text.pixelsPerUnit);

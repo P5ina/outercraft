@@ -68,6 +68,10 @@ namespace OuterCraft
             var harmony = new HarmonyLib.Harmony("P5INA.OuterCraft");
             harmony.Patch(HarmonyLib.AccessTools.Method(typeof(ToolModeSwapper), nameof(ToolModeSwapper.EquipToolMode)),
                 prefix: new HarmonyLib.HarmonyMethod(typeof(OuterCraft), nameof(EquipToolPrefix)));
+            harmony.Patch(HarmonyLib.AccessTools.Method(typeof(UnityEngine.UI.Text), "OnEnable"),
+                postfix: new HarmonyLib.HarmonyMethod(typeof(McFont), nameof(McFont.TextOnEnablePostfix)));
+            harmony.Patch(HarmonyLib.AccessTools.Method(typeof(UnityEngine.UI.Graphic), nameof(UnityEngine.UI.Graphic.SetVerticesDirty)),
+                postfix: new HarmonyLib.HarmonyMethod(typeof(McFont), nameof(McFont.SetVerticesDirtyPostfix)));
             harmony.Patch(HarmonyLib.AccessTools.Method(typeof(WarpCoreItem), nameof(WarpCoreItem.GetDisplayName)),
                 postfix: new HarmonyLib.HarmonyMethod(typeof(WarpCores), nameof(WarpCores.DisplayNamePostfix)));
 
